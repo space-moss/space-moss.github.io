@@ -1,0 +1,1990 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#262624">
+<meta name="description" content="A robotics notebook. Findings, experiments, and dead ends from learning to build machines that sense and move.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Shyam Vaidyanathan: Robotics notebook">
+<meta property="og:description" content="A robotics notebook. Findings, experiments, and dead ends from learning to build machines that sense and move.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%BE%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap">
+<title>Shyam Vaidyanathan: Robotics notebook</title>
+<style id="app-style">:root{
+  --bg:#262624; --panel:rgba(38,38,36,.88); --panel-solid:#2d2d2a; --raise:#34342f;
+  --line:#3f3e39; --line-strong:#57554d;
+  --text:#f0eee6; --muted:#b1afa4; --faint:#85837a;
+  --red:#e0685f; --green:#6fb57d; --blue:#74a3e3; --link:#9cbdf0;
+  --serif:"Source Serif 4","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"Hanken Grotesk","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --measure:40rem;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#262624; --text:#f0eee6; } }
+:root[data-theme="dark"]{ --bg:#262624; --text:#f0eee6; }
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--serif);font-size:1.125rem;line-height:1.6;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;min-height:100%;overflow-x:hidden}
+img{max-width:100%;height:auto}
+a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:.18em}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--link);outline-offset:3px;border-radius:4px}
+
+/* background simulation */
+#life{position:fixed;left:0;top:0;z-index:0;image-rendering:pixelated;image-rendering:crisp-edges;
+  opacity:0;transition:opacity 1.4s ease}
+#life.on{opacity:1}
+.shade{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 60% at 12% 18%,rgba(38,38,36,.72),rgba(38,38,36,0) 70%)}
+.page{position:relative;z-index:1}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:1rem clamp(1.1rem,4vw,3rem);font-family:var(--sans);font-size:.95rem}
+.brand{color:var(--text);text-decoration:none;font-weight:500;letter-spacing:.005em}
+.brand:hover{text-decoration:underline}
+.bar-actions{display:flex;gap:.5rem;align-items:center}
+
+.btn{font:500 .92rem/1 var(--sans);border-radius:999px;padding:.62rem 1rem;cursor:pointer;
+  border:1px solid var(--line-strong);background:rgba(38,38,36,.7);color:var(--text);
+  display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--raise)}
+.btn.primary{background:var(--text);color:#1f1e1c;border-color:var(--text)}
+.btn.primary:hover{background:#fff}
+.btn.danger{color:#f0a39c;border-color:#6b3a36}
+.btn.danger:hover{background:#3a2826}
+.btn[disabled]{opacity:.55;cursor:progress}
+.btn svg{width:.9em;height:.9em}
+
+/* home */
+.hero{min-height:calc(86svh - 4rem);padding:clamp(3rem,12vh,8rem) clamp(1.1rem,4vw,3rem) 3rem;
+  display:flex;flex-direction:column;justify-content:space-between;gap:3rem}
+.name{font-family:var(--serif);font-weight:400;font-size:clamp(2.6rem,7.2vw,5.6rem);line-height:.98;
+  letter-spacing:-.022em;margin:0;max-width:11ch;text-shadow:0 0 18px var(--bg),0 0 4px var(--bg)}
+.tagline{font-size:clamp(1.15rem,1.9vw,1.4rem);color:var(--muted);max-width:30ch;margin:1.25rem 0 0;
+  line-height:1.45;text-shadow:0 0 12px var(--bg),0 0 3px var(--bg)}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;
+  font-family:var(--sans);font-size:.88rem;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:.5rem;text-shadow:0 0 8px var(--bg),0 0 3px var(--bg),0 0 2px var(--bg)}
+.sw{width:.62rem;height:.62rem;border-radius:2px;display:inline-block}
+.sw.red{background:var(--red)} .sw.green{background:var(--green)} .sw.blue{background:var(--blue)}
+.legend a{color:var(--muted)}
+.now{display:grid;gap:.6rem;font-family:var(--sans);text-shadow:0 0 8px var(--bg),0 0 3px var(--bg),0 0 2px var(--bg)}
+.now p{margin:0}
+.now-line{font-size:.95rem;color:var(--muted)}
+.now-title{color:var(--text);font-weight:500}
+.now-credit{color:var(--faint)}
+.now-actions{display:flex;flex-wrap:wrap;gap:.4rem 1.25rem;font-size:.88rem}
+.now-actions a{color:var(--muted)}
+.linkish{font:inherit;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}
+.linkish:hover{color:var(--text)}
+.col-title{color:var(--muted);font-weight:500}
+
+.sheet{background:var(--panel);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  border-top:1px solid var(--line);}
+.entries{max-width:calc(var(--measure) + 8rem);padding:3rem clamp(1.1rem,4vw,3rem) 4rem}
+.entries-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}
+.entries h2{font-family:var(--sans);font-size:1rem;font-weight:600;margin:0;color:var(--text)}
+.count{font-family:var(--sans);font-size:.9rem;color:var(--faint)}
+.entry-list{list-style:none;margin:0;padding:0}
+.entry-list li{border-top:1px solid var(--line)}
+.entry-list li:last-child{border-bottom:1px solid var(--line)}
+.entry-link{display:grid;grid-template-columns:7.5rem 1fr;gap:.2rem 1.5rem;padding:1.35rem 0;color:inherit;text-decoration:none}
+.entry-link:hover .e-title{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em}
+.e-date{font-family:var(--sans);font-size:.88rem;color:var(--faint);padding-top:.3rem;font-variant-numeric:tabular-nums}
+.e-title{font-size:1.4rem;line-height:1.25;font-weight:500;letter-spacing:-.005em}
+.e-sum{grid-column:2;color:var(--muted);font-size:1.02rem;margin-top:.25rem;max-width:36rem}
+.e-tags{grid-column:2;display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.55rem}
+.tag{font-family:var(--sans);font-size:.8rem;color:var(--muted);border:1px solid var(--line-strong);border-radius:999px;padding:.12rem .6rem}
+.empty{padding:2rem 0;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.empty p{margin:0 0 1rem}
+
+/* article */
+.article-wrap{padding:1rem clamp(.75rem,3vw,3rem) 4rem}
+.article{max-width:calc(var(--measure) + 5rem);background:var(--panel);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  border:1px solid var(--line);border-radius:18px;padding:clamp(1.4rem,5vw,3.25rem)}
+.back{font-family:var(--sans);font-size:.92rem;color:var(--muted);text-decoration:none;display:inline-block;margin-bottom:2rem}
+.back:hover{color:var(--text);text-decoration:underline}
+.article h1{font-weight:500;font-size:clamp(2rem,4.6vw,2.9rem);line-height:1.1;letter-spacing:-.018em;margin:0 0 .9rem;max-width:22ch}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;font-family:var(--sans);font-size:.9rem;color:var(--faint);margin-bottom:2.25rem}
+.owner-tools{display:flex;gap:.5rem;margin-left:auto}
+.prose{max-width:var(--measure);font-size:1.15rem;line-height:1.68}
+.prose > :first-child{margin-top:0}
+.prose h2{font-size:1.55rem;font-weight:600;line-height:1.25;margin:2.4rem 0 .6rem;letter-spacing:-.01em}
+.prose h3{font-size:1.25rem;font-weight:600;margin:2rem 0 .5rem}
+.prose h4{font-family:var(--sans);font-size:1rem;font-weight:600;margin:1.6rem 0 .4rem}
+.prose p{margin:0 0 1.15rem}
+.prose ul,.prose ol{margin:0 0 1.15rem;padding-left:1.4rem}
+.prose li{margin:.3rem 0}
+.prose blockquote{margin:1.5rem 0;padding:.2rem 0 .2rem 1.1rem;border-left:2px solid var(--line-strong);color:var(--muted);font-style:italic}
+.prose hr{border:0;border-top:1px solid var(--line);margin:2.2rem 0}
+.prose code{font-family:var(--mono);font-size:.84em;background:var(--raise);border-radius:5px;padding:.1em .35em}
+.prose pre{font-family:var(--mono);font-size:.86rem;line-height:1.55;background:#1f1f1d;border:1px solid var(--line);
+  border-radius:10px;padding:1rem 1.1rem;overflow-x:auto;margin:1.4rem 0}
+.prose pre code{background:none;padding:0;font-size:inherit}
+.prose img{border-radius:8px;display:block;margin:1.5rem 0}
+.prose table{border-collapse:collapse;font-family:var(--sans);font-size:.95rem;margin:1.4rem 0;display:block;overflow-x:auto}
+.prose th,.prose td{border:1px solid var(--line);padding:.45rem .7rem;text-align:left}
+
+/* live figures */
+.prose figure.viz{margin:2rem 0;padding:0;border:1px solid var(--line);border-radius:12px;background:#1f1f1d;overflow:hidden}
+.viz-stage{width:100%;line-height:0}
+.viz-stage canvas{display:block;max-width:100%}
+.viz-controls{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;align-items:center;padding:.8rem 1rem;border-top:1px solid var(--line);font-family:var(--sans);font-size:.88rem;color:var(--muted)}
+.viz-controls label{display:flex;align-items:center;gap:.5rem}
+.viz-controls input[type=range]{accent-color:var(--link);width:9rem}
+.viz-controls output{color:var(--text);font-variant-numeric:tabular-nums;min-width:4.5rem}
+.viz-controls .btn{padding:.45rem .8rem;font-size:.85rem}
+.viz-hint{color:var(--faint)}
+.viz-controls select{font:inherit;color:var(--text);background:#262624;border:1px solid var(--line-strong);border-radius:8px;padding:.35rem .5rem}
+.viz-table{padding:0 1rem 1rem;font-family:var(--sans);font-size:.88rem;color:var(--muted)}
+.viz-table:empty{display:none}
+.viz-table p{margin:.6rem 0 0}
+.prose .viz-table table{margin:0;font-size:.86rem}
+.prose .viz-table th[scope=row]{font-weight:500;color:var(--text)}
+.prose figure.viz figcaption{padding:0 1rem .95rem;font-family:var(--sans);font-size:.9rem;line-height:1.5;color:var(--muted)}
+.prose figure.viz figcaption strong{color:var(--text)}
+
+/* equations */
+.prose .math{margin:1.4rem 0;padding:1rem 1.2rem;border-left:2px solid var(--line-strong);background:rgba(31,31,29,.55);border-radius:0 10px 10px 0;overflow-x:auto}
+.prose .math .eq{font-family:var(--serif);font-size:1.06rem;line-height:1.7;color:var(--text);padding-left:1.6em;text-indent:-1.6em}
+.prose .math .eq.cont{padding-left:3.2em}
+.prose .math .lbl{display:inline-block;min-width:8.6em;margin-right:.9em;text-indent:0;font-family:var(--sans);font-size:.82em;color:var(--muted)}
+.prose .math .eq-gap{height:.6rem}
+.prose .math em{font-style:italic;color:var(--text)}
+.prose .math sub,.prose .math sup{font-size:.72em;line-height:0}
+.prose .math .sp{display:inline-block;width:1.4em}
+.prose .m{font-family:var(--serif);white-space:nowrap}
+.prose .m sub,.prose .m sup{font-size:.72em;line-height:0}
+
+/* benchmark charts */
+.chart-legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;margin:1rem 0 .2rem!important}
+.chart-legend span,.chart-read span{display:inline-flex;align-items:center;gap:.35rem;margin-right:.8rem}
+.chart-legend i,.chart-read i{width:.7rem;height:.18rem;border-radius:2px;display:inline-block}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin-top:.6rem}
+.chart{border:1px solid var(--line);border-radius:10px;padding:.75rem .8rem .5rem;background:rgba(38,38,36,.6);min-width:0}
+.chart-canvas{width:100%}
+.chart canvas{display:block;touch-action:none}
+.prose .chart p{margin:0}
+.chart-title{color:var(--text);font-weight:500;font-size:.88rem}
+.chart-note{color:var(--faint);font-size:.8rem;margin-bottom:.4rem!important}
+.chart-read{font-size:.8rem;color:var(--muted);min-height:2.4em;margin-top:.3rem!important;line-height:1.5}
+.chart-hint{color:var(--faint)}
+
+/* editor */
+.editor{display:grid;gap:1.1rem;max-width:var(--measure)}
+.field{display:grid;gap:.4rem}
+.field label{font-family:var(--sans);font-size:.9rem;font-weight:500;color:var(--text)}
+.hint{font-family:var(--sans);font-size:.84rem;color:var(--faint)}
+.field select{font:inherit;font-family:var(--sans);font-size:1rem;color:var(--text);background:#1f1f1d;border:1px solid var(--line-strong);border-radius:10px;padding:.65rem .8rem;width:100%}
+.field input,.field textarea{font:inherit;font-size:1.05rem;color:var(--text);background:#1f1f1d;border:1px solid var(--line-strong);
+  border-radius:10px;padding:.7rem .85rem;width:100%}
+.field textarea{font-family:var(--mono);font-size:.92rem;line-height:1.55;min-height:22rem;resize:vertical}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--link);box-shadow:0 0 0 3px rgba(156,189,240,.18)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start}
+.tabs{display:flex;gap:.25rem;font-family:var(--sans)}
+.tab{font:500 .88rem var(--sans);background:none;border:0;color:var(--muted);padding:.4rem .7rem;border-radius:8px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--raise);color:var(--text)}
+.preview{border:1px solid var(--line);border-radius:10px;padding:1.25rem;min-height:22rem;background:rgba(31,31,29,.6)}
+.form-actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.5rem}
+.form-actions .note{font-family:var(--sans);font-size:.86rem;color:var(--faint);margin-left:auto}
+.error-text{font-family:var(--sans);font-size:.88rem;color:#f0a39c}
+
+.colophon{position:relative;z-index:1;background:var(--panel);border-top:1px solid var(--line);
+  padding:2.25rem clamp(1.1rem,4vw,3rem) 2.75rem;font-family:var(--sans);font-size:.92rem;color:var(--faint);line-height:1.6}
+.colophon p{max-width:44rem;margin:0 0 .8rem}
+.colophon .legend{margin-bottom:1rem}
+
+#toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));transform:translate(-50%,1rem);
+  background:var(--text);color:#1f1e1c;font:500 .92rem var(--sans);padding:.7rem 1.1rem;border-radius:999px;z-index:5;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 2rem)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:640px){
+  .entry-link{grid-template-columns:1fr}
+  .e-sum,.e-tags{grid-column:1}
+  .e-date{padding-top:0}
+  .row2{grid-template-columns:1fr}
+  .owner-tools{margin-left:0}
+  .bar .btn .lbl{display:none}
+  .hero{min-height:calc(82svh - 4rem)}
+}
+@media (prefers-reduced-motion: reduce){ #life{transition:none} #toast{transition:none} }
+</style>
+</head>
+<body>
+<template id="shell"><canvas id="life" aria-hidden="true"></canvas>
+<div class="shade" aria-hidden="true"></div>
+<div class="page">
+  <header class="bar">
+    <a class="brand" href="#/" data-bind="name"></a>
+    <div class="bar-actions">
+      <button class="btn" id="sim-toggle" type="button" aria-pressed="false">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/></svg>
+        <span class="lbl">Pause background</span>
+      </button>
+      <a class="btn primary" id="new-entry" href="#/new" hidden>New entry</a>
+    </div>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <footer class="colophon" id="about-background">
+    <div id="colophon-now"></div>
+    <p id="colophon-general"></p>
+    <p data-bind="footer"></p>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+</template>
+<div id="root"></div>
+<script type="application/json" id="site-data">{
+ "site": {
+  "name": "Shyam Vaidyanathan",
+  "title": "Shyam Vaidyanathan: Robotics notebook",
+  "tagline": "A robotics notebook. Findings, experiments, and dead ends from learning to build machines that sense and move.",
+  "footer": "Written by Shyam Vaidyanathan. Entries are working notes: corrections and questions are welcome."
+ },
+ "entries": [
+  {
+   "id": "starting-this-notebook",
+   "title": "Starting this notebook",
+   "date": "2026-09-28",
+   "tags": [
+    "meta",
+    "ros2"
+   ],
+   "summary": "What this site is for, and what I plan to write about.",
+   "body": "I\u2019m moving from AI and full-stack engineering into robotics. This notebook is where I\u2019ll publish what I find along the way: small experiments, notes on papers, and the things that didn\u2019t work.\n\n## What to expect\n\n- **ROS 2 experiments.** Nodes, launch files, and simulation setups, with the code that ran.\n- **Perception.** Computer vision carried over from my ML work, applied to robots.\n- **Reading notes.** Short summaries of papers and what I\u2019d try next.\n\nEach entry is dated and tagged, so you can follow one thread at a time.\n\n```bash\nros2 run demo_nodes_cpp talker\n```",
+   "backdrop": {
+    "effect": "lidar",
+    "variant": "robot-arm"
+   },
+   "updated": 1790698448619
+  },
+  {
+   "id": "lidar-part-1",
+   "title": "LIDAR, part 1: shooting light at things I can't see",
+   "date": "2026-09-29",
+   "tags": [
+    "lidar",
+    "perception",
+    "ros2"
+   ],
+   "summary": "What confused me first about LIDAR, what the toy behind this page gets wrong, and the five projects I'm planning.",
+   "body": "Click anywhere on the empty background of this page. Keep clicking.\n\nThere's a robot arm back there. You can't see it until you shoot light at it, and even then you only get dots: 2,400 per click, arranged in 16 horizontal lines, coloured by height. After a dozen clicks the dots start to look like a shoulder, an elbow, a gripper reaching for something on the floor.\n\nI built that toy before I understood much about how LIDAR works. This entry is me going back and trying to earn it.\n\n## Why LIDAR, coming from computer vision\n\nMost of my background is in ML, including computer vision. Cameras are great at *what*: colour, texture, labels. They're bad at *where*. A single image has no depth, so a network has to guess it from cues like shading and perspective, and guesses fail in exactly the situations a robot cares about: low light, glare, a white wall, something it has never seen.\n\nLIDAR flips that. It gives almost no semantics, just geometry, but the geometry is measured rather than inferred. That trade is what pulled me in.\n\n## The one equation\n\nFire a laser pulse, time how long the reflection takes to come back, and halve it:\n\n```text\ndistance = (speed of light \u00d7 round-trip time) / 2\n```\n\nThe halving is the part I kept forgetting, because the light has to go there *and* back. The numbers are what made it click for me:\n\n- One metre of distance is about 6.7 nanoseconds of round trip.\n- One centimetre is about 67 picoseconds.\n\nSo a sensor that measures to the centimetre is timing light to within tens of picoseconds, thousands of times a second. I still find that a little absurd.\n\n## Things that confused me (in the order they confused me)\n\n**2D vs 3D.** A 2D LIDAR spins a single beam in a flat plane and returns a ring of distances, which is what most indoor robots and robot vacuums use for mapping. A 3D LIDAR stacks several beams at different vertical angles. Each beam traces its own ring, which is why 3D scans look like contour lines on the ground. The toy on this page fakes 16 channels, borrowing the layout of the classic 16-beam spinning sensors.\n\n**Why far away things turn into a few sad dots.** The beams fan out, so the gap between rings grows with distance. A person at 5 m might be hit by several rings; at 50 m, maybe one or two. More range doesn't mean more detail.\n\n**Points aren't a picture.** A camera image is a tidy grid. A point cloud is an unordered bag of (x, y, z) and maybe intensity. You can't just run a normal CNN on it, which is why there's a whole family of point cloud networks (PointNet was the one everyone pointed me to first).\n\n**The sensor moves while it scans.** A spinning LIDAR takes around a tenth of a second per revolution. If the robot is driving, the start and end of the sweep are measured from different places, and straight walls come out bent. Undoing that (deskewing) needs odometry or an IMU. This one surprised me the most.\n\nDrag the speed up and watch the room smear. Then turn on the correction.\n\n```viz motion-distortion\n```\n\n**Multiple returns.** One pulse can bounce off a leaf, then a branch, then the ground, and some sensors report all of them. That's how aerial LIDAR sees the ground through a forest canopy.\n\n**Wavelength matters.** Many sensors use about 905 nm, others about 1550 nm. At 1550 nm the eye's lens and cornea absorb the light before it reaches the retina, so those sensors can run at higher power and reach further. Newer FMCW designs also measure velocity per point, using the Doppler shift.\n\n## What the toy behind this page gets wrong\n\nBeing honest about the fake:\n\n- Every ray hits perfectly. Real returns have noise, dropouts and range error.\n- There's no reflectivity. Black rubber, glass and mirrors are all hard for real sensors; here everything reflects.\n- The rays start at your eye, not at a sensor mounted somewhere in the scene.\n- Nothing moves, so there's no motion distortion to correct.\n\nEach of those is a thing I'd like to add, because breaking the toy on purpose is a good way to learn why the real pipeline exists.\n\n## The projects I'm planning\n\nI'm ordering these from cheapest and simplest to most involved. Nothing below has results yet. Those will get their own entries as I finish (or fail at) each one.\n\n| Project | Hardware | What it should teach me |\n|---|---|---|\n| Desk scanner | Single-point ToF sensor on a pan\u2013tilt servo mount, microcontroller | Time of flight, noise, building a cloud one point at a time |\n| Map my apartment | Cheap 2D spinning LIDAR, ROS 2, slam_toolbox | LaserScan messages, RViz2, SLAM, loop closure |\n| Find the part the arm is reaching for | Simulated 3D LIDAR in Gazebo, Open3D | Ground removal, clustering, handing a pose to a manipulator |\n| Real street data | KITTI dataset, Open3D, KISS-ICP | Registration, odometry, why deskewing matters |\n| Phone scan vs. LIDAR scan | A phone with a depth sensor | Dense short-range depth vs. sparse long-range points |\n\n### 1. Desk scanner\n\nThe dumbest possible version of a 3D scanner: one distance sensor that measures one point, swept left\u2013right and up\u2013down by two servos. Each (pan, tilt, distance) triple becomes one point. It'll be slow and noisy, and I think that's the point. I want to see the noise before a fancy sensor hides it from me.\n\n### 2. Map my apartment with a 2D LIDAR\n\nPlug a 2D LIDAR into ROS 2, watch the `LaserScan` messages in RViz2, then let slam_toolbox build an occupancy map while I carry it around. Converting a scan into points was the first bit of code that made the message format make sense to me:\n\n```python\nimport math\n\ndef scan_to_points(scan):\n    \"\"\"sensor_msgs/LaserScan -> list of (x, y) in the sensor frame.\"\"\"\n    points = []\n    for i, r in enumerate(scan.ranges):\n        if scan.range_min \u003c r \u003c scan.range_max:   # drop invalid and out-of-range readings\n            angle = scan.angle_min + i * scan.angle_increment\n            points.append((r * math.cos(angle), r * math.sin(angle)))\n    return points\n```\n\n### 3. Find the part the arm is reaching for\n\nThis one is the background of this page made real. Put a simulated 3D LIDAR next to a simulated arm in Gazebo, get a point cloud, then:\n\n1. Remove the floor with RANSAC plane fitting.\n2. Cluster what's left into objects.\n3. Pick the cluster that looks like the part, estimate where it is, and hand that pose to the arm.\n\nThe Open3D version of steps 1 and 2 is surprisingly short, which makes me suspicious I'm missing the hard part:\n\n```python\nimport numpy as np\nimport open3d as o3d\n\npcd = o3d.io.read_point_cloud(\"scan.pcd\").voxel_down_sample(voxel_size=0.01)\nplane, inliers = pcd.segment_plane(distance_threshold=0.02, ransac_n=3, num_iterations=1000)\nobjects = pcd.select_by_index(inliers, invert=True)          # everything that isn't floor\nlabels = np.array(objects.cluster_dbscan(eps=0.05, min_points=10))\nprint(f\"found {labels.max() + 1} clusters\")\n```\n\nHere's the same idea in 2D, slowed down so you can watch RANSAC guess, keep its best guess, peel the floor away and group what's left:\n\n```viz ransac\n```\n\n### 4. Real street data\n\nDownload a few sequences from KITTI, which was recorded with a 64-beam spinning LIDAR on a car. Do the same ground removal and clustering on real outdoor data, then try LIDAR odometry with KISS-ICP and see how far off it drifts. This is where the deskewing problem stops being theoretical.\n\n### 5. Phone scan vs. LIDAR scan\n\nScan the same object with a phone depth sensor and with whatever I've built by then, and compare them in CloudCompare. I expect the phone to win up close and lose badly past a few metres, but I'd rather measure it than assume it.\n\n## Questions I can't answer yet\n\n- How do people calibrate a LIDAR to a camera so the points and pixels line up?\n- When does ICP fail? I know it needs a decent starting guess; I don't yet have a feel for how decent.\n- How do real systems deal with rain, fog and dust?\n- What makes a point cloud network better than just projecting points into a depth image and using a normal CNN?\n\nIf you know, I'd genuinely like to hear it.\n\n## Resources I'm working through\n\n- The ROS 2 documentation for `sensor_msgs/LaserScan` and `PointCloud2`\n- Open3D's point cloud tutorials\n- slam_toolbox, for 2D mapping in ROS 2\n- The KITTI and nuScenes datasets\n- *LOAM: Lidar Odometry and Mapping in Real-time* (Zhang and Singh, 2014), which several people told me to read next\n",
+   "backdrop": {
+    "effect": "lidar",
+    "variant": "robot-arm"
+   },
+   "updated": 1790800000000
+  },
+  {
+   "id": "lidar-rover-in-life",
+   "title": "LIDAR, part 1.5: a rover that dodges the Game of Life",
+   "date": "2026-09-29",
+   "tags": [
+    "lidar",
+    "planning",
+    "game of life"
+   ],
+   "summary": "A single cell with a 72-beam 2D LIDAR tries to survive inside Conway's Game of Life.",
+   "body": "The background of this page is a small experiment: what if a robot with a 2D LIDAR had to survive inside Conway's Game of Life?\n\nThe rover is a single cell. It isn't part of the Life rules, so it doesn't change the world, but it loses a point every time it ends a generation on a live cell. It never gets to look at the grid directly. All it knows is what its LIDAR sees.\n\nClick the background to throw an R-pentomino at it.\n\n```viz lidar-life\n```\n\n## What the rover does every generation\n\n1. **Scan.** It fires 72 beams in a circle. Each beam walks outward cell by cell and stops at the first live cell it meets. Cells a beam passed through are known to be empty; cells behind a hit are unknown.\n2. **Predict.** For each of its nine possible moves (the eight neighbours, or staying put), it works out the chance that the target cell will be alive in the next generation. Life's rule is local, so this only needs the target cell and its eight neighbours. Seen neighbours count as they are; unseen ones are assumed alive with a 25% prior, and the rover adds up the binomial odds of getting exactly the right number of neighbours for a birth or survival.\n3. **Score and move.** The collision chance dominates the score. Ties are broken by clearance (how close the nearest hit is in that direction) and open space (how far the beams reach in that direction), which is roughly the idea behind the vector field histogram method used on real robots.\n\nThe grey dot is a blind random walker living in the same world, as a baseline.\n\n## The math\n\n**The world.** $A_t(c)$ is 1 if cell c is alive at generation t. Every cell has eight neighbours \ud835\udca9(c), and Life's rule is one function of a cell's state a and its live-neighbour count n:\n\n```math\nL(a, n) = 1  if n = 3,  or if a = 1 and n = 2;   otherwise 0\nA_{t+1}(c) = L( A_t(c), N_t(c) ),    N_t(c) = \u03a3_{c\u2032 \u2208 \ud835\udca9(c)} A_t(c\u2032)\n```\n\nIn this version the rover is *not* a live cell. It sits at $x_t$ and never changes the world.\n\n**The scan.** Beam k of 72 points at angle $\u03b8_k$ and walks outward to a maximum range R. It reports the distance to the first live cell:\n\n```math\n\u03b8_k = 2\u03c0k / 72,    k = 0, 1, \u2026, 71\nr_k = min { d \u2264 R :  A_t( x_t + round(d \u00b7 (cos \u03b8_k, sin \u03b8_k)) ) = 1 }     (r_k = R if nothing is hit)\n```\n\nCells a beam passes through before $r_k$ are *seen empty*, the cell it stops on is *seen alive*, and every other cell within 3 of the rover is *unseen*.\n\n**Collision probability.** There are nine moves m \u2208 {\u22121, 0, 1}\u00b2, each targeting the cell c = $x_t$ + m. Let K be the number of c's neighbours seen alive, U the number unseen, and p = 0.25 the chance an unseen cell is alive. The neighbour count N is then K plus a binomial:\n\n```math\nP(N = j) = C(U, j \u2212 K) \u00b7 p^{j \u2212 K} \u00b7 (1 \u2212 p)^{U \u2212 j + K}\ns = 1 if c is seen alive,   0 if seen empty,   p if unseen\nP_{hit}(m) = s \u00b7 [ P(N = 2) + P(N = 3) ]  +  (1 \u2212 s) \u00b7 P(N = 3)\n```\n\nThat last line is just Life's rule in probability form: a live cell survives on 2 or 3 neighbours, a dead one is born on exactly 3.\n\n**Clearance.** For a move in direction $\u03c6_m$ = atan2($m_y$, $m_x$), the sector $S_m$ is every beam within 30\u00b0 of it (all 72 beams for staying still):\n\n```math\nd_{min}(m) = min_{k \u2208 S_m} r_k           r\u0304(m) = (1 / |S_m|) \u00b7 \u03a3_{k \u2208 S_m} r_k\n```\n\n**Risk, and the choice.** Each move gets a cost, and the rover takes the cheapest:\n\n```math\nJ(m) = 10 \u00b7 P_{hit}(m)  +  1.2 \u00b7 e^{\u2212d_{min}(m) / 4}  +  0.6 \u00b7 (1 \u2212 r\u0304(m) / R)\n            +  0.08 \u00b7 \ud835\udfd9[m = \u2212m_{prev} \u2260 0]  +  \u03b5\n\u03b5 ~ Uniform(0, 0.02)\nm\u22c6 = argmin_{m} J(m)\n```\n\n- **The 10 \u00b7 $P_{hit}$ term** dominates. A 10% chance of collision costs about as much as the clearance term ever can, so clearance and open space only decide between moves that are about equally safe.\n- **The $1.2 \u00b7 e^{\u2212d/4}$ term** pushes away from nearby hits. It's 1.2 at distance 0 and fades to about 0.1 by 10 cells.\n- **The $0.6 \u00b7 (1 \u2212 r\u0304/R)$ term** prefers directions where beams travel far, which is roughly the vector field histogram idea.\n- **0.08 for reversing** stops it dithering back and forth, and **\u03b5** breaks exact ties.\n\n**Scoring.** A collision is ending a generation on a live cell:\n\n```math\ncollisions per 1,000 generations = (1000 / T) \u00b7 \u03a3_{t=1}^{T} A_t(x_t)\n```\n\n## What I found\n\nIn test runs of 12,000 generations, the rover didn't collide once in either world. The blind walker hit something about 30 times per 1,000 generations in glider rain and about 55 per 1,000 in random soup.\n\nThat result is less impressive than it sounds. Life is deterministic and local, so a one-step prediction with a clear view of the neighbourhood is almost exact. The LIDAR rarely leaves a neighbour unseen at that range. The interesting part is where this breaks:\n\n- **Occlusion.** When a live cell sits right next to the rover, it hides the cells behind it, and the prior starts to matter.\n- **Boxed in.** If all nine moves are bad, the best it can do is pick the least bad one. One step of lookahead can walk it into a dead end.\n- **No memory.** It forgets everything between scans. It can't tell that a glider is heading its way; it only reacts once the glider is adjacent.\n\n## What I'd try next\n\n- Keep a short history of scans and estimate which hits are moving and where to, the same way real LIDAR tracking separates moving objects from static ones.\n- Look two or three generations ahead instead of one.\n- Add sensor noise (missed returns, false hits) and see how quickly the perfect record falls apart.\n",
+   "backdrop": {
+    "effect": "rover",
+    "variant": "glider-rain"
+   },
+   "updated": 1790800000002
+  },
+  {
+   "id": "lidar-rover-hunts",
+   "title": "LIDAR, part 1.6: the rover gets hungry",
+   "date": "2026-09-29",
+   "tags": [
+    "lidar",
+    "planning",
+    "game of life"
+   ],
+   "summary": "The rover becomes an immortal live cell that hunts. Five strategies, direct vs indirect kills, and a twin world to keep score.",
+   "body": "In [part 1.5](#/e/lidar-rover-in-life) the rover's only job was to stay out of the way. That turned out to be almost too easy. So I flipped its directive: now it hunts.\n\nThe rules changed in two ways:\n\n- **It's a live cell now.** When the Game of Life works out the next generation, the rover counts as a live neighbour, so it can cause births and deaths around it.\n- **It can't die.** Whatever the rules say, its own cell stays alive.\n\nIt still only knows what its 72-beam LIDAR sees.\n\n```viz rover-hunt\n```\n\n## Direct vs indirect kills\n\nI wanted to separate what the rover destroys itself from what it causes, so I had to pin down the words:\n\n- **Direct kill:** the rover steps onto a live cell. That cell is gone.\n- **Indirect kill:** a neighbour of the rover dies this generation, but would have lived if the rover weren't there. I check this by recounting each neighbour's neighbours with the rover's cell holding whatever was there before it arrived.\n- **Cell created:** the reverse. A neighbour is born or survives only because the rover added one to its neighbour count.\n- **The twin world:** a copy of the world with no rover in it, fed exactly the same gliders at the same times. The gap between the two populations is the long-run effect, including every cascade the rover set off.\n\nThe first three are immediate, one-generation effects. The twin is the only measure that captures the chain reactions.\n\n## Five strategies\n\n1. **One-step planner:** simulates the next generation for each of its nine moves using only what the LIDAR saw, and picks the move with the most direct plus indirect kills minus cells created.\n2. **Overcrowder:** never aims to step on anything. It positions itself where its presence as a neighbour kills the most cells.\n3. **Greedy eater:** steps onto any adjacent live cell it can see, otherwise heads for the nearest LIDAR hit.\n4. **Random walker:** ignores the LIDAR. A baseline.\n5. **Parked:** never moves. A control for what happens just from being a live cell in the way.\n\nWhen a strategy sees nothing worth doing, it heads toward the nearest thing its LIDAR hit, or wanders if nothing is in range.\n\n## The math\n\nI'm reusing L(a, n) and $A_t(c)$ from [part 1.5](#/e/lidar-rover-in-life). Two things change: the rover counts as a live cell, and it can't die.\n\n```math\nA_{t+1}(c) = L( A_t(c), N_t(c) )    for every c \u2260 x_{t+1}\nA_{t+1}(x_{t+1}) = 1\n```\n\nEach generation the rover picks a move m, steps to x\u2032 = $x_t$ + m, and then Life runs with the rover counted in its neighbours' totals.\n\n**Direct kill.** Did it step onto a live cell?\n\n```math\nD_t = A_t(x\u2032)      (1 if the rover moved onto a live cell, which is removed)\n```\n\n**Indirect kills and created cells.** For each neighbour c of the rover's new cell, N(c) is its live-neighbour count *with* the rover. The counterfactual N\u2032(c) swaps the rover back out for whatever was in that cell before it arrived:\n\n```math\nN\u2032(c) = N(c) \u2212 1 + D_t\nI_t = \u03a3_{c \u2208 \ud835\udca9(x\u2032)} \ud835\udfd9[ L(A(c), N\u2032(c)) = 1  and  L(A(c), N(c)) = 0 ]      would have lived, dies\nC_t = \u03a3_{c \u2208 \ud835\udca9(x\u2032)} \ud835\udfd9[ L(A(c), N\u2032(c)) = 0  and  L(A(c), N(c)) = 1 ]      would have been dead, lives\n```\n\nIf the rover ate a cell, N\u2032 = N, so eating on its own never counts as an indirect effect.\n\n**The twin world.** $B_t$ evolves from the same start with the same glider schedule, but no rover. The gap is how many fewer cells the rover's world has, and I report its average:\n\n```math\nG_t = |B_t| \u2212 ( |A_t| \u2212 1 )\n\u1e20 = (1 / T) \u00b7 \u03a3_{t=1}^{T} G_t\n```\n\nThe table's per-100 rates are 100/T \u00b7 \u03a3 $D_t$, 100/T \u00b7 \u03a3 $I_t$ and 100/T \u00b7 \u03a3 $C_t$, and net indirect is 100/T \u00b7 \u03a3 ($I_t$ \u2212 $C_t$).\n\n**The strategies.** D\u0302(m), \u00ce(m) and \u0108(m) are the same three quantities, predicted before moving from the LIDAR belief, with unseen cells treated as empty. \u03b5 ~ Uniform(0, 0.01) breaks ties.\n\n```math\nPlanner:        score(m) = D\u0302(m) + \u00ce(m) \u2212 \u0108(m) + \u03b5\nOvercrowder:    score(m) = \u00ce(m) \u2212 0.5 \u00b7 D\u0302(m) + \u03b5\n```\n\nBoth take the highest-scoring move, but only if its score is above 0.02. Otherwise they fall back to heading for the nearest thing the LIDAR hit, or wandering if nothing is in range:\n\n```math\nm_{toward} = ( sign \u0394x, sign \u0394y )      toward the nearest LIDAR hit\nm_{wander} = current heading,  replaced by a random one with probability 0.03 each generation\n```\n\nThe other three don't score anything:\n\n```math\nGreedy eater:   m\u22c6 = a seen-alive neighbour if there is one,  else m_{toward}\nRandom walker:  m\u22c6 ~ Uniform{ \u22121, 0, 1 }\u00b2\nParked:         m\u22c6 = (0, 0)\n```\n\n- **The planner's objective is myopic.** It maximises one-generation damage, which is why it can't see that eating a whole still life beats making a neighbour die of overcrowding for one generation.\n- **The overcrowder's \u22120.5 \u00b7 D\u0302** is the only thing stopping it from eating. That's deliberate: it isolates the indirect effect.\n\n## Results\n\nEvery strategy ran on the same four seeded worlds for 1,000 generations on a 120 \u00d7 80 wrap-around grid, so the comparison is paired: same starting cells, same glider schedule. Numbers are per 100 generations; net indirect is indirect kills minus cells created. The benchmark button on the figure above reruns exactly this (it takes about a minute).\n\n**Random soup** (20% of cells alive at the start, no new gliders):\n\n| Strategy | Direct kills | Indirect kills | Cells created | Net indirect | Fewer cells than twin (avg) |\n|---|---|---|---|---|---|\n| One-step planner | 27.9 | 69.2 | 13.1 | 56.0 | 53.5 |\n| Overcrowder | 7.4 | 225.1 | 146.4 | 78.7 | \u22126.4 |\n| Greedy eater | 90.2 | 3.0 | 8.0 | \u22125.0 | 106.3 |\n| Random walker | 10.9 | 32.0 | 52.8 | \u221220.8 | 28.4 |\n| Parked | 0.0 | 132.2 | 97.5 | 34.7 | 12.4 |\n\n**Glider rain** (a new glider every 12 generations):\n\n| Strategy | Direct kills | Indirect kills | Cells created | Net indirect | Fewer cells than twin (avg) |\n|---|---|---|---|---|---|\n| One-step planner | 30.6 | 66.5 | 16.7 | 49.8 | 33.6 |\n| Overcrowder | 8.6 | 195.9 | 153.6 | 42.3 | 35.0 |\n| Greedy eater | 89.0 | 2.6 | 5.9 | \u22123.3 | \u221230.0 |\n| Random walker | 7.6 | 23.0 | 38.4 | \u221215.4 | \u22120.4 |\n| Parked | 0.0 | 114.1 | 97.8 | 16.2 | \u221244.5 |\n\n## What I think it means\n\n**Eating works.** The greedy eater makes almost one direct kill every generation, and in random soup it leaves the world about 106 cells emptier than its twin on average, twice as much as anything else. Soup settles into still lifes and blinkers, and a rover that just walks from one to the next and chews through them is hard to beat.\n\n**Immediate indirect kills are a misleading number.** The overcrowder and the parked rover rack up huge indirect counts, but they create nearly as many cells as they kill. Sitting next to a blinker or a still life, the rover kills a cell, it comes back, it kills it again. Most of that \"killing\" is churn. Net indirect (kills minus cells created) is the fairer number, and the twin gap is fairer still: in soup the overcrowder actually leaves slightly *more* cells than a world without it.\n\n**The planner is the only one that is decent at both.** It gets about a third of the greedy eater's direct kills, and because it counts the cells it would create, its net indirect score is strong: the best in glider rain, and second in soup behind the overcrowder, whose score there doesn't survive the twin comparison. It has the second-best twin gap in soup.\n\n**Glider rain is too chaotic for four seeds.** The twin gaps swing from +35 to \u221245, and negative numbers mean the rover's world ended up with more cells than the twin. Hitting a glider can start a reaction that grows into a much bigger mess than the glider itself. I don't trust any ranking in that table except the direct kills. It needs many more runs.\n\n## What I'd try next\n\n- Run glider rain with 50+ seeds and put confidence intervals on the twin gap.\n- Give the planner a two- or three-generation horizon, and score it on the twin gap directly instead of immediate kills.\n- Let the planner learn which still lifes collapse completely when eaten, and which ones it should eat in a particular order.\n- Put two rovers in the same world with different strategies.\n",
+   "backdrop": {
+    "effect": "rover",
+    "variant": "hunt-planner"
+   },
+   "updated": 1790900000001
+  },
+  {
+   "id": "lidar-rover-farms",
+   "title": "LIDAR, part 1.7: the rover learns to farm",
+   "date": "2026-09-29",
+   "tags": [
+    "lidar",
+    "planning",
+    "game of life"
+   ],
+   "summary": "Moving costs energy, eating earns it, and at 100 a rover splits. Four strategies, and why the farmer wins.",
+   "body": "In [part 1.6](#/e/lidar-rover-hunts), the parked rover kept \"killing\" the same cells over and over, because its presence as a neighbour made them grow back. I treated that as a flaw in my metric. It's also a strategy: farming. So this time I changed the incentives to reward it.\n\n## The new economy\n\n- **Moving costs energy:** 1 per step by default. Staying still is free.\n- **Eating earns energy:** 10 per cell by default. Eating means stepping onto a live cell.\n- **At 100 energy, a rover splits.** A child appears in a free neighbouring cell, and both counters reset to zero.\n\nA rover with no energy can't wander, but it can still step onto a live cell next to it, because the meal pays for the step. Rovers are still immortal live cells, they can't step on each other, and each one only knows what its own 72-beam LIDAR sees. Colonies are capped at 40 rovers to keep the page fast; the rays you see belong to the first rover.\n\nA meal counts as **farmed** if the cell only exists because a rover was next to it: it was born, or kept alive, because a rover added one to its neighbour count, and it has stayed alive since. That's the number I actually care about.\n\n```viz rover-farm\n```\n\n## Four strategies\n\n1. **Farmer:** scores each move by the energy it earns now, plus the food it expects to have next to it next generation, counting the cells its own presence will make grow. It only goes exploring while it can afford to.\n2. **Ambusher:** never pays to move. It waits until a live cell appears next to it, then eats it.\n3. **Greedy eater:** eats anything next to it, otherwise pays to chase the nearest LIDAR hit.\n4. **Random walker:** moves at random whenever it can afford to. A baseline.\n\n## The math\n\nRovers work exactly as in [part 1.6](#/e/lidar-rover-hunts): immortal live cells that eat by stepping onto live cells. What's new is energy.\n\n**The energy budget.** Each rover has an energy counter E. With meal reward R, move cost $c_m$ and idle cost $c_i$:\n\n```math\nE_{t+1} = max( 0,  E_t + R \u00b7 \ud835\udfd9[ate]  \u2212  c_m \u00b7 \ud835\udfd9[moved]  \u2212  c_i )\nR = 10,   c_m = 1,   c_i = 0,   E = 50 for the first rover\n```\n\nA rover can never go into debt, so some moves aren't allowed:\n\n```math\nonto a live cell:      allowed if  E_t \u2212 c_m + R \u2265 0      (the meal pays for the step)\nonto an empty cell:    allowed if  E_t \u2265 c_m\nonto another rover:    never\n```\n\n**Splitting.** With threshold \u03b8 = 100 and a cap of 40 rovers:\n\n```math\nif E \u2265 \u03b8,  n \u003c 40  and a neighbouring cell is empty:    new rover there with E = 0,  parent E \u2190 0\nif n = 40:    E \u2190 min(E, \u03b8)\n```\n\n**Farmed cells.** $M_t(c)$ is 1 when at least one rover r caused cell c: c lives next generation *with* r counted, and wouldn't without it. $N\u2032_r(c)$ is the counterfactual from part 1.6, computed for that rover. A cell stays farmed for as long as it stays alive:\n\n```math\nM_t(c) = 1  if  \u2203 r :  L( A(c), N(c) ) = 1  and  L( A(c), N\u2032_r(c) ) = 0\nF_{t+1}(c) = A_{t+1}(c) \u00b7 [ M_t(c)  \u2228  ( F_t(c) \u2227 A_t(c) ) ]\nfarmed share = ( meals on cells with F = 1 ) / ( all meals )\n```\n\n**The farmer's value function.** For each affordable move m, the farmer predicts how many non-rover cells will be alive next to x + m next generation if it stands there. It applies L to the LIDAR belief, with itself counted as a live neighbour and the cell it's leaving counted as empty:\n\n```math\nn\u0302(m) = \u03a3_{c \u2208 \ud835\udca9(x + m)} L\u0302( c | rover at x + m )\nF(m) = 0  if n\u0302(m) = 0,    else  0.9 \u00b7 (R \u2212 c_m)  +  0.3 \u00b7 min( n\u0302(m) \u2212 1, 3 )\nV(m) = R \u00b7 \ud835\udfd9[food at x + m]  \u2212  c_m \u00b7 \ud835\udfd9[m \u2260 0]  +  F(m)  +  \u03b5\nm\u22c6 = argmax_{affordable m} V(m)\n```\n\n- **R \u00b7 \ud835\udfd9[food] \u2212 $c_m$ \u00b7 \ud835\udfd9[move]** is the energy it gains or spends right now.\n- **F(m)** values standing next to future food at about one discounted meal: 0.9 of the net value R \u2212 $c_m$. Only one cell can be eaten per generation, so extra food nearby is worth only a little more, capped at 3 \u00d7 0.3.\n- **Standing still costs nothing**, so if its current spot will grow food, V(0) = F(0) beats paying to move anywhere that won't. That's what makes it park and farm.\n\nIf nothing scores at least 0.5 and it has energy to spare, it explores:\n\n```math\nif  V(m\u22c6) \u003c 0.5  and  E > 3 \u00b7 c_m + 5:     m\u22c6 = m_{toward}\nm_{toward} = step toward the nearest seen food, or wander (new random heading with probability 0.05)\n```\n\n**The other strategies** use the same energy rules, and fall back to staying put when a move isn't affordable:\n\n```math\nAmbusher:       m\u22c6 = a random neighbouring live cell if there is one,  else (0, 0)\nGreedy eater:   m\u22c6 = a random neighbouring live cell if there is one,  else m_{toward}\nRandom walker:  m\u22c6 ~ Uniform{ \u22121, 0, 1 }\u00b2\n```\n\n**The scores in the table:**\n\n```math\ncells eaten per 100 generations = (100 / T) \u00b7 \u03a3_t meals_t\nmeals per move = \u03a3_t meals_t / \u03a3_t moves_t\ncolony full = first t with n_t = 40\n```\n\n## Results\n\nSame setup as before: four seeded worlds per strategy, 1,000 generations each, on a 120 \u00d7 80 wrap-around grid, move cost 1, meal reward 10. \"Colony full\" is the average generation the colony reached 40 rovers. The benchmark button on the figure reruns exactly this, and the sliders let you change the costs first.\n\n**Random soup:**\n\n| Strategy | Cells eaten per 100 gens | Farmed share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 2,189 | 72% | 0.87 | 40 | gen 91 |\n| Ambusher | 868 | 71% | 1.00 | 40 | gen 250 |\n| Greedy eater | 528 | 57% | 0.37 | 40 | gen 102 |\n| Random walker | 461 | 70% | 0.22 | 30.8 | gen 349 (3 of 4 runs) |\n\n**Glider rain:**\n\n| Strategy | Cells eaten per 100 gens | Farmed share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 1,300 | 76% | 0.87 | 40 | gen 463 |\n| Ambusher | 200 | 43% | 1.00 | 21.5 | gen 618 (1 of 4 runs) |\n| Greedy eater | 249 | 61% | 0.23 | 40 | gen 340 |\n| Random walker | 273 | 75% | 0.23 | 31.5 | gen 673 (3 of 4 runs) |\n\n## What I think it means\n\n**The farmer wins by a lot.** It eats about 2.5 times as much as the next strategy in soup and about 5 times as much in glider rain. Almost nine out of ten of its moves end in a meal, and about three quarters of what it eats is food it grew.\n\n**Farming happens even when nobody plans it.** Every strategy except the ambusher in glider rain ends up with a farmed share around 60 to 75%. Once there are dozens of immortal live cells packed together, they make cells grow around them whether they mean to or not, and anything that eats nearby is eating crops. The farmer's advantage isn't that it farms, it's that it farms *efficiently*: it picks the spot where its presence grows the most food, and it stops paying to move.\n\n**Waiting is not the same as farming.** The ambusher never wastes a move, but in glider rain it barely grew: most runs never filled the colony. Standing still only pays if you're standing somewhere that produces food.\n\n**Greedy is fast early and wasteful later.** It filled the colony in soup nearly as fast as the farmer, but only about one in three of its moves was a meal, so once the colony was full it harvested a quarter of what the farmers did.\n\n**Move cost is what makes it a farming game.** When I tripled the move cost to 3, the farmer barely noticed (2,171 cells per 100 generations in soup), greedy dropped to 312, and the random walker never split at all: it stayed a single rover eating about 10 cells per 100 generations.\n\n## Caveats\n\n- The 40-rover cap shapes everything after the colony fills. These numbers compare harvesting rates at the cap more than growth.\n- My farmed definition follows a cell's whole lifetime, so a cell a rover helped be born counts as farmed even if other cells later kept it alive.\n- Four seeds is still few, especially for glider rain.\n\n## What I'd try next\n\n- Remove the cap and let colonies compete for space in one world, mixed strategies.\n- Charge a small upkeep for staying still, to see whether the farmer still parks.\n- Let rovers share LIDAR scans, so a colony can map where the good farmland is.\n",
+   "backdrop": {
+    "effect": "rover",
+    "variant": "farm-farmer"
+   },
+   "updated": 1791000000001
+  }
+ ]
+}</script>
+<script id="app-script">(function(){
+'use strict';
+var PATTERNS = {"breeder": {"rle": "404bo2bo$408bo$404bo3bo$405b4o$416b2o$402bo11bo4bo$400bobo17bo$342bobo46bo8bobo11bo5bo$342bobo44bo3bo21b6o5b6o$331bo10bob2o48bo30bo5bo$329bo3bo10b2o43bo4bo36bo$334bo6bo2bo45b5o30bo4bo$329bo4bo7b2o83b2o$330b5o50b2o$385b2o32b3o5b2o$385b2o2bo13bo13bo3bo4bob2o$368b2o12b2ob2o3bo11bobo12bo7b2obobo$355b2o10bo2bo8b2o2bobo4bo4b2o4bo9b2o4bo7bob2ob2o$355b2o11b2o9b2o2b3o3bo5b2o5bo8b2o5bo2bo3bo3b2o$419bobo5b3o2$419bobo5b3o$355b2o11b2o9b2o2b3o3bo5b2o5bo8b2o5bo2bo3bo3b2o$355b2o10bo2bo8b2o2bobo4bo4b2o4bo9b2o4bo7bob2ob2o$368b2o12b2ob2o3bo11bobo12bo7b2obobo$385b2o2bo13bo13bo3bo4bob2o$385b2o32b3o5b2o$330b5o50b2o$329bo4bo7b2o83b2o$334bo6bo2bo45b5o30bo4bo$329bo3bo10b2o43bo4bo36bo$331bo10bob2o48bo30bo5bo$342bobo44bo3bo21b6o5b6o$342bobo46bo8bobo11bo5bo$400b2o18bo$401bo12bo4bo$416b2o$477b2o$475b2ob2o$475b4o$476b2o$376bobo$376b2o111b2o$377bo107b4ob2o5b4o$485b6o5b6o$463b2o21b4o6b4ob2o$460b3ob2o34b2o$403b2o55b5o21bo$400b3ob2o46bo8b3o23bo$352bobo45b5o21b3o23bo32b4o$352b2o47b3o20bo2b2o54b2o3bob2o$353bo69bo3bobo26bo11b2o14bobobobo7b2o$421bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$405b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$405b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$422bo3bo3b3o3bo14bo44b5o2$328bobo91bo3bo3b3o3bo14bo44b5o$328b2o11b2o30b2o30b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$329bo11b2o30b2o30b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$421bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$423bo3bobo26bo11b2o14bobobobo7b2o$424bo2b2o54b2o3bob2o$426b3o23bo32b4o$452bo8b3o23bo$460b5o21bo$460b3ob2o34b2o89b2o$463b2o21b4o6b4ob2o87b4o$485b6o5b6o88b2ob2o$485b4ob2o5b4o91b2o$489b2o$464bo136b4o$464bobo133b6o$280bobo181b2o134b4ob2o$280b2o294b3o13b3o9b2o9b2o$281bo252bobo38b5o12bo18b4ob2o$516b3o14b2o2bo37b3ob2o12bo17b6o$515b5o12b3o2bo40b2o27bo4b4o$515b3ob2o10b3o72bo2bo$440bo77b2o11bobo2b2o59b3o$440bobo87b2ob3obo38b2o17b5o12b2o$440b2o89bo6bo37b2o16b3o14bo3bo$532bo4bo20b2o15bo2bo14bo3bo9bo3bo4bo$534b5o6b2o10bo2bo8b2o4bobo7b2o5b2o2bo4b2o5bobo5bo$538b2o5b2o11b2o9b2o5bo8b2o5bo6b3o9b2ob3o$538b2o53b8o2$538b2o53b8o$449b2o30b2o30b2o23b2o5b2o11b2o9b2o5bo8b2o5bo6b3o9b2ob3o81b2o$232bobo214b2o30b2o30b2o19b5o6b2o10bo2bo8b2o4bobo7b2o5b2o2bo4b2o5bobo5bo79b2ob2o$232b2o298bo4bo20b2o15bo2bo14bo3bo9bo3bo4bo79b4o$233bo297bo6bo37b2o16b3o14bo3bo81b2o$530b2ob3obo38b2o17b5o12b2o$531bobo2b2o59b3o110b2o$531b3o72bo2bo96b4ob2o5b4o$392bo139b3o2bo40b2o27bo4b4o90b6o5b6o$392bobo138b2o2bo37b3ob2o12bo17b6o67b2o21b4o6b4ob2o$392b2o140bobo38b5o12bo18b4ob2o63b3ob2o34b2o$576b3o13b3o9b2o9b2o7b2o55b5o21bo$600b4ob2o14b3ob2o46bo8b3o23bo$600b6o15b5o21b3o23bo32b4o$601b4o17b3o20bo2b2o54b2o3bob2o$644bo3bobo26bo11b2o14bobobobo7b2o$642bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$569bo56b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$184bobo381bo57b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$184b2o382b3o72bo3bo3b3o3bo14bo44b5o$185bo$643bo3bo3b3o3bo14bo44b5o$562b2o30b2o30b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$562b2o30b2o30b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$344bo297bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$344bobo198bo98bo3bobo26bo11b2o14bobobobo7b2o$344b2o198bo100bo2b2o54b2o3bob2o$544b3o100b3o23bo32b4o$673bo8b3o23bo$681b5o21bo$681b3ob2o34b2o$684b2o21b4o6b4ob2o$706b6o5b6o$706b4ob2o5b4o$136bobo571b2o$136b2o547bo$137bo547bobo$685b2o3$296bo$296bobo198bo$296b2o198bo$496b3o162bo55b2o$661bobo52b4o$661b2o53b2ob2o$718b2o2$727b4o$726b6o$88bobo635b4ob2o$88b2o547bo64b3o25b2o9b2o$89bo547bobo61b5o31b4ob2o$637b2o62b3ob2o16b2o12b6o$665b2o37b2o16bobo13b4o$664bo2bo53bo2bo12bo$248bo412b2obo61bo9bobo$248bobo198bo216b2o52bo15bobo$248b2o198bo212bo3b2o39b2o17bobobo10b2o$448b3o212bobo22b2o15bo2bo13bo2bobo2bo9bobo$643b2o30b2o10bo2bo4bo3b2o4bobo7b2o6b2o5bo2bo8bo$643b2o23b2o5b2o11b2o5bo3b2o5bo8b2o11bobobo2bo4b3o$668b2o55b2obo3bo2bo2$668b2o55b2obo3bo2bo$3b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o23b2o5b2o11b2o5bo3b2o5bo8b2o11bobobo2bo4b3o$3b2o30b2o3bobo24b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o10bo2bo4bo3b2o4bobo7b2o6b2o5bo2bo8bo$40b2o547bo73bobo22b2o15bo2bo13bo2bobo2bo9bobo$41bo547bobo69bo3b2o39b2o17bobobo10b2o$589b2o75b2o52bo15bobo$3bo657b2obo61bo9bobo$2b3o659bo2bo53bo2bo12bo$bo3bo194bo464b2o37b2o16bobo13b4o$ob3obo193bobo198bo299b3ob2o16b2o12b6o$b5o194b2o198bo300b5o31b4ob2o$196b2o30b2o30b2o30b2o30b2o30b2o30b2o10b3o17b2o30b2o30b2o30b2o30b2o152b3o25b2o9b2o$35b2o30b2o30b2o30b2o30b2o30bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo175b4ob2o$35bobo29bobo29bobo29bobo29bobo29bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo175b6o$36b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o177b4o$6b3o692bo$8bo691bo$7bo$701bobo$703bo$701bo$702bo2$38b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o371b4o$4b3o30bobo29bobo29bobo29bobo29bobo29bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo369b6o$3bo3bo29b2o30b2o30b2o30b2o30b2o30bo2bo28bo2bo28bo2bo28bo2bo28bo2bo28bo2bo229b2o138b4ob2o$2bo5bo189b2o30b2o30b2o30b2o30b2o30b2o229b2o115b3o25b2o9b2o$2b2obob2o193b2o387bo113b5o15b3o13b4ob2o$202bobo461b2o37b3ob2o14bo15b6o$202bo464b2o39b2o18bo13b4o$5bo659bobo59bo12bo$4bobo657b3o71b2o$4bobo34b2o621bo2bo62bo8bo2bo$5bo35bobo356b2o262bob3o39b2o19b4o7b3ob2o$41bo357b2o264bo2bo21b2o15bo2bo21bo13bo$5b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o10bo19b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o19b2o9b2o10bo2bo8b2o4bobo7b2o5b4o2bob2o12bo$5b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o30b2o23b2o5b2o11b2o9b2o5bo8b2o5bobobobo4b2o5bo2b2o$670b2o53b2o2bobo11b2o2$670b2o53b2o2bobo11b2o$422bo30b2o30b2o30b2o30b2o30b2o30b2o30b2o23b2o5b2o11b2o9b2o5bo8b2o5bobobobo4b2o5bo2b2o$422bo30b2o30b2o30b2o30b2o30b2o30b2o23b2o5b2o19b2o9b2o10bo2bo8b2o4bobo7b2o5b4o2bob2o12bo$424b2o211b2o26bo2bo21b2o15bo2bo21bo13bo$250b2o387bo24bob3o39b2o19b4o7b3ob2o$250bobo411bo2bo62bo8bo2bo$250bo413b3o71b2o$665bobo59bo12bo$667b2o39b2o18bo13b4o$89b2o575b2o37b3ob2o14bo15b6o$89bobo356b2o212b2o41b5o15b3o13b4ob2o$89bo357b2o212b2o43b3o25b2o9b2o$449bo213bo66b4ob2o$730b6o$731b4o2$479b6o6b2o229b2o$478bo5bo4bo4bo225b2ob2o$472b2o10bo10bo190b2o32b4o$414b2o38b5o12b2o5bo4bo5bo5bo189b2o34b2o$298b2o113b3o37bo4bo14bo6b2o8b6o191bo$298bobo93b5o12b2o3bo41bo27bo$298bo94bo4bo12bo3bo37bo3bo28b3o$398bo11bo44bo21bo7bob2o2bo$393bo3bo12b3o2b2o59b3o8b3o2bo$137b2o256bo14bobob3o38b2o16b3o10b5o2bo$137bobo271b3ob2o20b2o15bo2bo14bo3bo3bo5b3obob3o215b2o$137bo275b2o9b2o10bo2bo8b2o4bobo7b2o5bo2bobo4bo9b2ob2o213b2o$417b2o5b2o11b2o9b2o5bo8b2o5bo8bo9b2ob2o216bo$417b2o53b8o252b6o6b2o$731bo5bo4bo4bo$417b2o53b8o257bo10bo$360b2o30b2o23b2o5b2o11b2o9b2o5bo8b2o5bo8bo9b2ob2o212b5o19bo4bo5bo5bo$360b2o30b2o19b2o9b2o10bo2bo8b2o4bobo7b2o5bo2bobo4bo9b2ob2o210bo4bo20bobo8b6o$411b3ob2o20b2o15bo2bo14bo3bo3bo5b3obob3o152b5o59bo$410bobob3o38b2o16b3o10b5o2bo152bo4bo21bo32bo3bo20bo2bo$346b2o62b3o2b2o59b3o8b3o2bo158bo20bobo33bo21b3ob2o$346bobo61bo44bo21bo7bob2o2bo154bo3bo24bo53b2o3bob2o$346bo64bo3bo37bo3bo28b3o159bo21bob2o24b2obo12b2o14bo3bo9b3o$411b2o3bo41bo27bo181bob2o25b4ob2o9bo2bo13bobobob2o4bo3b2o$413b3o37bo4bo14bo6b2o8b6o155b2o13b3o2b2o7b2ob2o11bo4b2o4b2o4bobo7b2o6b5obobo2bobo2b2o$185b2o227b2o38b5o12b2o5bo4bo5bo5bo155b2o14b2o2b2o3bo4b3o12bobo8b2o5bo8b2o7bo4b2o2bo5bo$185bobo284b2o10bo10bo180b2o3b2o14bo40bo3b5o$185bo292bo5bo4bo4bo$370b2o107b6o6b2o183b2o3b2o14bo40bo3b5o$370bobo278b2o14b2o2b2o3bo4b3o12bobo8b2o5bo8b2o7bo4b2o2bo5bo$370bo97bo2bo179b2o13b3o2b2o7b2ob2o11bo4b2o4b2o4bobo7b2o6b5obobo2bobo2b2o$472bo195bob2o25b4ob2o9bo2bo13bobobob2o4bo3b2o$468bo3bo175bo21bob2o24b2obo12b2o14bo3bo9b3o$469b4o173bo3bo24bo53b2o3bob2o$651bo20bobo33bo21b3ob2o$646bo4bo21bo32bo3bo20bo2bo$394b2o251b5o59bo$394bobo309bo4bo20bobo8b6o$394bo312b5o19bo4bo5bo5bo$737bo10bo$731bo5bo4bo4bo$233b2o497b6o6b2o$233bobo$233bo487bo2bo$418b2o305bo$418bobo300bo3bo$418bo303b4o6$442b2o$442bobo$442bo3$281b2o$281bobo$281bo$466b2o$466bobo$466bo$491b2o$487b4ob2o5b4o$487b6o5b6o$465b2o21b4o6b4ob2o$462b3ob2o34b2o$462b5o21bo$454bo8b3o23bo$428b3o23bo32b4o$426bo2b2o54b2o3bob2o$425bo3bobo26bo11b2o14bobobobo7b2o$329b2o92bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$329bobo11b2o30b2o30b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$329bo13b2o30b2o30b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$424bo3bo3b3o3bo14bo44b5o2$424bo3bo3b3o3bo14bo44b5o$407b2o14bo8bo3b2obo12bobo8b2o5bo8b2o7bo4b3o2bo4bo$407b2o14bo3b2o11bo11bo2bob2o4b2o4bobo7b2o6bobo3bo4b3o2bo$353b2o68bo3bo9bobo13b4obo10bo2bo13bo3b3o2bo3bo2b2o$353bobo69bo3bobo26bo11b2o14bobobobo7b2o$353bo49b3o20bo2b2o54b2o3bob2o$402b5o21b3o23bo32b4o$402b3ob2o46bo8b3o23bo$405b2o55b5o21bo$462b3ob2o34b2o$465b2o21b4o6b4ob2o$377b2o108b6o5b6o$377bobo107b4ob2o5b4o$377bo113b2o2$478b2o$477b4o$477b2ob2o$479b2o$401b2o$401bobo16b2o$401bo14b4ob2o5b4o$416b6o5b6o$374bo19b2o21b4o6b4ob2o$372b2obo15b3ob2o34b2o$334b2o35bo3bo15b5o$331b3ob2o30b4obobo17b3o$331b5o30bobo3b2o12b2o33bo$332b3o20bo4b2o4bobo16bo2bo32b2o5b3o$354bobo2b2obo2b2ob2o18bo15bo14bo2bo3b2o$353bo3bo2b2ob3o2b4o11b2o5b2o11b2o12b3o6bo4b2o$340b2o12bo2bo4bo3b2obob2o17b2o4b2o4b3o7b2o4b2o5b2ob2o2bo$340b2o12b2ob2o9b2ob2o11bobo9b2o14b2o5bobo10bo$370bo14bo35bo7b3o2$370bo14bo35bo7b3o$340b2o12b2ob2o9b2ob2o11bobo9b2o14b2o5bobo10bo$340b2o12bo2bo4bo3b2obob2o17b2o4b2o4b3o7b2o4b2o5b2ob2o2bo$353bo3bo2b2ob3o2b4o11b2o5b2o11b2o12b3o6bo4b2o$354bobo2b2obo2b2ob2o18bo15bo14bo2bo3b2o$332b3o20bo4b2o4bobo16bo2bo32b2o5b3o$331b5o30bobo3b2o12b2o33bo$331b3ob2o30b4obobo17b3o$334b2o35bo3bo15b5o$372b2obo15b3ob2o34b2o$374bo19b2o21b4o6b4ob2o$416b6o5b6o$416b4ob2o5b4o$403b2o15b2o$402bo$407b2o$406b4o$406b2ob2o$408b2o!", "w": 749, "h": 338, "n": 4060}, "rakefactory": {"rle": "164bobo$163bo2bo$133b2o27b2o10bo6bo$133b2o4b3o12b2o4b2o3bo8bo5bobo$119bo10b2o6b5o11b2o6b2o9bo6b2obo$119bobo7b3o5bo3bobo19bo2bo2b2o9b2ob2o3b2o$122b2o6b2o6bo3b2o20bobo2bo2b3o5b2obo4b2o$93b2o13b2o12b2o9b2o34b4o7bobo$67b2o24b2o13b2o12b2o9b2o35b2o9bo$67b2o50bobo$48b2o69bo11bo127bobo$48b2o79bobo125bo3bo$93bo36b2o31bo93bo19bo$66b3o23b3o66b2o87b2o4bo4bo14b4o$66b3o22bo3bo34bo31b2o86b2o5bo12bo4b2obobo$65bo3bo20bob3obo33b2o125bo3bo3bob2o5b3obo2bo2b2o$64bo5bo20b5o33bobo37b3o87bobo2bob4o5b2obobo3b2o$65bo3bo40b2o26bo30bo94b2o2b2o6b4o$26b2o38b3o41b2o27bo30bo106bo$26b2o109b3o$110bo$109bobo49b2o115b2o$46b5o41bo2b2o12bobo10b2o36bobo115bobo$26bo18bob3obo15bobo22bobo15bo12b2o10b2o23bo16b2o100b3o$25bobo18bo3bo15bo2bo21b2o29bo12bobo21b2o8b2o6bobo100b2o$24bo3bo18b3o14bob2o22b2o45bo31b2o6bo11bo90b2o$25b3o20bo41b2obo13b2obob2o13b2o8b2o48bobo88bobo$23b2o3b2o37bo23b3o13bo5bo13b2o28bo16b2o9b2o92bo$64b2obo40bo3bo42b3o16b2o9b2o12b2o$66bo42b3o3bo23b2o13bo10b2o3bo6b2o6b2o12b2o44b2o$46bo45b2o3b2o16b2o22bo14b2o9bobo3bo5b3o7bobo55bo30b2o3b2o$46bo13b2o33bo18bobo9b2o9bobo26b5o6b2o10bo47bo5bobo11b2o17b2o3b2o$24bo20bobo5bo6b2o4b2o3b2o19bo5bo25bo3bo8b2o28b3o4b2o25b2o33bobo4b2o11bobo$24bo19b2ob2o2bobo13b5o12bobo6b2ob2o25bo5bo44b2o24bo2bo32b2obo16bo15b3o3b3o$24bob3o14bo5bo2b2o13b2ob2o12b2o8bobo21b2o2b2obo3bo70bo23b2o10b2ob2o14b2o8b2o5bo5b3o$46bo20b2ob2o13bo9bo22b2o3bo5bo9bobo10bo47bo23b2o10b2obo25b2o6bo5bo$29bo13b2o3b2o18b3o24bo28bo3bo10b2o10b3o46bobo33bobo$26bob2o82bo13b2o12bo10b3o46bobo34bo$26b2o70bo13bo88bo40bobo$45bo51bobo11bobo35b2o3b2o86b2o$45bo32bo5b3o10bobo10b2ob2o34b2o3b2o80bo6bo$21b2o3b2o16bo31b2o6bo13bo10bo5bo24bo57b2o3b2o31bobo37b3o$21b2o3b2o40b2o7b2o6bo26bo25b2o58bo5bo31b2o38b3o$22b5o7bo33b2o39b2o3b2o23b2o134bo3bo$23bobo9bo10b2o47b2o3b2o24bo60bo11bo3bo$33b3o10b2o47bobobobo23bo60bobo11b3o41bo29b2o3b2o$23b3o70b5o10bo13b3o26b2o13b2o15b2obo54b3o$68bo9b2o12b2o3b3o11bo28bo13bo14bobo14b2ob2o3b2o51bo$66bobo8bobo12bobo3bo11bo29b3o7bo4b3o2b2o2b2o6bo13b2obo4b2o50b2o$67b2o8bo14bo50bo5b2o6bo2b2obo2bo2bo2bo13bobo$58bo17b2o8b2o54b2o5bobo12b2o6bo8bo5bo$58b3o25b2o24b2o55bobo7bobo$24b2o6b2o27bo50b2o55b2o9b2o16bo$24b2o6b2o26b2o136bobo59b2o$8b2o65bo122b2o59b2o$9bo66bo166b2o16bo14b2o$9bobo5bo8bo2bo44b3o18b3o50b2o7b2o44bo39b2o31b2o$10b2o4bobo10bo64b2ob2o19bo20b2o6bobo6b2o30bo13b3o81b2o$14b2o3bo5b2o3bo2bo15bo44b2ob2o17b2o21b2o8bo8bo30bo11b5o80bo$5b2o7b2o3bo4bobob2o3b4o13bo11b3o29b5o18b2o68b3o10b2o3b2o61b2o9bo4bobo$5b2o7b2o3bo14b4o10b3o10bo3bo27b2o3b2o101b5o15bo45b4o7bobo3b2o$16bobo5b2o8bo2bo5b2o127bo28bo3bo13b2o24b3o14bobo2bo2b3o5b2obo$17bo16b4o5b2o15bo5bo98b2obo3b4o26bobo9bo5b2o12bo12bo13bo2bo2b2o9b2ob2o$33b4o23b2o3b2o92b2o2b2obobo4b4o26bo9bo15bo4b4o8bo13b2o9bo6b2obo$33bo42bo39bobo10b2o9b3o15bobo2b2obob2o3bo2bo36b3o13bo5b4o10b2o7b2o3bo8bo5bobo$5bo14b2o23b2o27bobo20b2o17b2o11bo2bo9bo14b3o8b2o3b4o19bo27b2o9bo2bo9bobo9b2o10bo6bo$5bo15bo22bobo10bo17b2o40bo3b5o7bo7bo5bo8b3o8b2o3b4o4b2o12bobo6b2o19b2o9b4o8b3o4b2o5bo2bo$4bobo14bobo5bobo11bo11bobo45bo16bo5bo6bo12b4o7b3o12bo7bobo12b2o6b2o29b4o8b3o4bo2bo5bobo$3b2ob2o14b2o5bo2bo10bo2bo9b2o45bobo14bo3b2o7bo11b2obobo7bobo21bo51bo12b3o4b2o$2bo5bo23b2o9bo21b2o23bo4b2o6b2o16bo7bo2bo11b3obo2bo7b2o21b2o64bobo$5bo24bo3b2o8bobo5b2o11bo25bo3b2o32b2o14b2obobo98b2o$2b2o3b2o23b2o11b2o5bobo11b3o20b3o54b4o$29bo2bo8bo12bo13bo78bo$29bobo10b2o10b2o165bo2bo$3b4o14bo19b2o182bo41b4o$3bo2b2o11bobo81bo2bo86bo2bo24bo3bo40bo3bo12bo2bo$4bob2o3b2o4b2o18b2o68bo41b4o44bo24b4o13b4o27bo16bo$11b2o4b2o17bo3bo62bo3bo40bo3bo40bo3bo40bo3bo23bo2bo13bo3bo$5b2o10b2o16bo5bo62b4o44bo18b2o21b4o44bo41b4o$6bo12bobo4bo8bo3bo2bo105bo2bo19b2o65bo2bo19bo$21bo3bo9bo12bobo119bobo89bo$25b3o2bo5bo3bo3bo4b2o21bo59bo4b2o83bo4b2o31b3o$2obob2o30b2o3b2obo3bo20bobo24bo4b2o27bobo3b2o9b2o37bo4b2o20bo6bobo3b2o9b2o37bo4b2o$o5bo5bo32bo25b2o21b4o3b2ob2o24bo3bo12bo2bo33b4o3b2ob2o16bobo5bo3bo12bo2bo33b4o3b2ob2o$bo3bo7bo31b2o46b5o4bo2bo24bo3bo12bo2bo32b5o4bo2bo17b2o5bo3bo12bo2bo15bo16b5o4bo2bo$2b3o6b3o78bo9bo2bo24bo3bo11b2ob2o31bo9bo2bo24bo3bo11b2ob2o16bo14bo9bo2bo$93b2o8b2o25bo2bo13b2o34b2o8b2o25bo2bo13b2o16b3o15b2o8b2o$94bo37bo51bo24bo12bo51bo$79bo127bobo$36b2o42bo15b2o5bo2bo79b2o5bo2bo11b2o41bo24b2o5bo2bo$23bo11b4o13b2o24b3o14b4o8bo34b2o5b4o32b4o8bo34b2o5b4o9bo22b4o8bo$20b3ob2o9b2ob2o10b2ob2o40b2ob2o3bo3bo32b2ob2o3bo3bo32b2ob2o3bo3bo32b2ob2o3bo3bo7b3o22b2ob2o3bo3bo$21b3o13b2o11b4o43b2o5b4o32b4o8bo34b2o5b4o32b4o8bo34b2o5b4o$3b2o16b2o28b2o88b2o5bo2bo79b2o5bo2bo$2bo2bo240bo$2bo244bo$2bo82b2o158b3o$2bobo11bo68bo$2bobo11b2o49bo18b3o$3bo11bobo29bo19b2o19bo10bobo139bo$45bobo18bobo28bo3bo140bo$35b2o6b2o12b2o31b2o5bo19bo122b3o$2o3b2o27bo3bo4b2o12b2o26bo4b2o4bo4bo14b4o$o5bo26bo5bo3b2o39b2o11bo12bo4b2obobo3b2o$23b2o8bo3bob2o4bobo36bobo10bo3bo3bob2o5b3obo2bo2b2o110bo$bo3bo2b2o13b2o8bo5bo7bo51bobo2bob4o5b2obobo116bo$2b3o4b2o23bo3bo65b2o2b2o6b4o115b3o$8bo26b2o80bo2$231bo$92b2o138bo$91b2o137b3o$93bo3bobo$5bo46bo44b2o$3b2ob2o44b2o44bo$51bobo$2bo5bo$100bo$2b2obob2o90b2o$99bobo$33bo76bo$31b4o6b2o2b2o62bobo$25b2o3bobob2o5b4obo2bobo46bo8b2o3bo9b2o$25b2o2bo2bob3o5b2obo3bo3bo44b4o5b2o3bo9b2o$30bobob2o4bo12bo5b2o27b2o9b4o4b2o3bo$31b4o14bo4bo4b2o27b2o9bo2bo6bobo$33bo19bo39bo5b4o7bo$5b2o42bo3bo39bo4b4o$5b2o42bobo46bo!", "w": 288, "h": 129, "n": 2097}, "acorn": {"rle": "bo$3bo$2o2b3o!", "w": 7, "h": 3, "n": 7}, "gosper": {"rle": "24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!", "w": 36, "h": 9, "n": 36}, "puffertrain": {"rle": "3bo$4bo$o3bo$b4o4$o$b2o$2bo$2bo$bo3$3bo$4bo$o3bo$b4o!", "w": 5, "h": 18, "n": 22}, "spacefiller": {"rle": "20b3o3b3o$19bo2bo3bo2bo$4o18bo3bo18b4o$o3bo17bo3bo17bo3bo$o8bo12bo3bo12bo8bo$bo2bo2b2o2bo25bo2b2o2bo2bo$6bo5bo7b3o3b3o7bo5bo$6bo5bo8bo5bo8bo5bo$6bo5bo8b7o8bo5bo$bo2bo2b2o2bo2b2o4bo7bo4b2o2bo2b2o2bo2bo$o8bo3b2o4b11o4b2o3bo8bo$o3bo9b2o17b2o9bo3bo$4o11b19o11b4o$16bobo11bobo$19b11o$19bo9bo$20b9o$24bo$20b3o3b3o$22bo3bo2$21b3ob3o$21b3ob3o$20bob2ob2obo$20b3o3b3o$21bo5bo!", "w": 49, "h": 26, "n": 200}};
+var HEAD_HTML = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<meta name=\"color-scheme\" content=\"dark\">\n<meta name=\"theme-color\" content=\"#262624\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap\">";
+function decodeRLE(s){var cells=[],x=0,y=0,n='';for(var i=0;i<s.length;i++){var ch=s[i];if(ch>='0'&&ch<='9'){n+=ch;continue}var k=n?parseInt(n,10):1;n='';if(ch==='b'){x+=k}else if(ch==='o'){for(var j=0;j<k;j++)cells.push(x+j,y);x+=k}else if(ch==='$'){y+=k;x=0}else if(ch==='!')break}return cells}
+function popc(v){v=v-((v>>>1)&0x55555555);v=(v&0x33333333)+((v>>>2)&0x33333333);return(((v+(v>>>4))&0x0F0F0F0F)*0x01010101)>>>24}
+/* A bounded Life universe. o: {viewU, viewV, cells:[x,y,...], pU, pV, ml, mt, mr, mb, transform?}
+   View space is (u,v) in [0,viewU)x[0,viewV); the grid adds margins around it. */
+function makeWorld(o){
+  var LM=o.ml, TM=o.mt, GW=o.viewU+o.ml+o.mr, GH=o.viewV+o.mt+o.mb, N=GW*GH;
+  var cur=new Uint8Array(N), nxt=new Uint8Array(N), prev=new Uint8Array(N), hist=new Uint32Array(N);
+  var stamp=new Int32Array(N), stack=new Int32Array(N), comp=new Int32Array(N);
+  var live=new Int32Array(1<<16), liveN=0, x0=GW, x1=0, y0=GH, y1=0, cl=o.cells;
+  for(var i=0;i<cl.length;i+=2){var gx=cl[i]+o.pU+LM, gy=cl[i+1]+o.pV+TM; if(gx>3&&gx<GW-4&&gy>3&&gy<GH-4){var p=gy*GW+gx;cur[p]=1;hist[p]=0xFFFFFFFF; if(gx<x0)x0=gx; if(gx>x1)x1=gx; if(gy<y0)y0=gy; if(gy>y1)y1=gy;}}
+  var W={GW:GW,GH:GH,LM:LM,TM:TM,gen:0,wall:GW-4,cur:function(){return cur},live:function(){return live},liveN:0};
+  var EDGE=6;
+  W.step=function(){
+    var t=prev; prev=cur; cur=nxt; nxt=t;
+    var a=prev, b=cur;
+    var ya=Math.max(1,y0-1), yb=Math.min(GH-2,y1+1), xa=Math.max(1,x0-1), xb=Math.min(W.wall,x1+1,GW-2);
+    b.fill(0, Math.max(0,ya-2)*GW, Math.min(N,(yb+3)*GW));
+    var nx0=GW,nx1=0,ny0=GH,ny1=0; liveN=0;
+    for(var y=ya;y<=yb;y++){
+      var r=y*GW, ru=r-GW, rd=r+GW, edgeRow=(y<4||y>GH-5);
+      for(var x=xa;x<=xb;x++){
+        var n=a[ru+x-1]+a[ru+x]+a[ru+x+1]+a[r+x-1]+a[r+x+1]+a[rd+x-1]+a[rd+x]+a[rd+x+1];
+        var on=(n===3||(n===2&&a[r+x]===1))&&!(edgeRow||x<4||x>GW-5);
+        hist[r+x]=((hist[r+x]<<1)|(on?1:0))>>>0;
+        if(!on) continue;
+        b[r+x]=1;
+        if(liveN>=live.length){var nl=new Int32Array(live.length*2);nl.set(live);live=nl}
+        live[liveN++]=r+x;
+        if(x<nx0)nx0=x; if(x>nx1)nx1=x; if(y<ny0)ny0=y; if(y>ny1)ny1=y;
+      }
+    }
+    if(liveN===0){nx0=GW;nx1=0;ny0=GH;ny1=0}
+    x0=nx0;x1=nx1;y0=ny0;y1=ny1; W.gen++; W.liveN=liveN;
+  };
+  /* Colour every live cell: 1 red (moving / active), 2 green (stationary machinery), 3 blue (gliders).
+     mode 'breeder': non-glider cells left of gunLineG are guns, the rest is the puffer train.
+     mode 'generic': a component is stationary if its cells were alive most of the last 32 generations. */
+  W.classify=function(cls, mode, gunLineG){
+    var g=W.gen+1;
+    for(var i=0;i<liveN;i++){
+      var p=live[i]; if(!cur[p]||stamp[p]===g) continue;
+      var sp=0,cn=0,bx0=1e9,bx1=-1,by0=1e9,by1=-1,moved=false,heat=0;
+      stack[sp++]=p; stamp[p]=g;
+      while(sp){
+        var q=stack[--sp]; comp[cn++]=q;
+        var qx=q%GW, qy=(q-qx)/GW;
+        if(qx<bx0)bx0=qx; if(qx>bx1)bx1=qx; if(qy<by0)by0=qy; if(qy>by1)by1=qy;
+        if(!prev[q]) moved=true;
+        heat+=popc(hist[q]);
+        for(var dy=-GW;dy<=GW;dy+=GW)for(var dx=-1;dx<=1;dx++){var rr=q+dy+dx; if(cur[rr]&&stamp[rr]!==g){stamp[rr]=g;stack[sp++]=rr}}
+      }
+      var c;
+      if(cn===5&&bx1-bx0===2&&by1-by0===2&&moved) c=3;
+      else if(mode==='breeder') c=(bx0>gunLineG)?1:2;
+      else c=(heat/cn>13)?2:1;
+      if(cn<=12&&(bx0<EDGE+3||by0<EDGE+3||bx1>GW-EDGE-4||by1>GH-EDGE-4)){ for(var k=0;k<cn;k++) cur[comp[k]]=0; continue; }
+      for(var k2=0;k2<cn;k2++) cls[comp[k2]]=c;
+    }
+  };
+  return W;
+}
+
+
+
+/* ---------- data ---------- */
+var DATA;
+try { DATA = JSON.parse(document.getElementById('site-data').textContent); } catch (e) { DATA = {}; }
+DATA.site = DATA.site || {};
+DATA.entries = Array.isArray(DATA.entries) ? DATA.entries : [];
+var SITE = DATA.site;
+
+/* ---------- shell ---------- */
+var root = document.getElementById('root');
+root.appendChild(document.getElementById('shell').content.cloneNode(true));
+var $ = function (s, el) { return (el || document).querySelector(s); };
+var view = $('#view');
+document.querySelectorAll('[data-bind="name"]').forEach(function (el) { el.textContent = SITE.name || 'Robotics notebook'; });
+var foot = $('[data-bind="footer"]');
+if (foot) foot.textContent = SITE.footer || '';
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(d) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? MONTHS[+m[2]-1] + ' ' + (+m[3]) + ', ' + m[1] : (d || ''); }
+function today() { var n = new Date(); return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0'); }
+function sorted() { return DATA.entries.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || '') || (b.updated || 0) - (a.updated || 0); }); }
+function findEntry(id) { for (var i = 0; i < DATA.entries.length; i++) if (DATA.entries[i].id === id) return DATA.entries[i]; return null; }
+
+/* ---------- markdown ---------- */
+function safeUrl(u) { return /^(https?:\/\/|mailto:|#|\/_blob\/|data:image\/(png|jpe?g|gif|webp);)/i.test(u); }
+function inline(s) {
+  var codes = [];
+  s = s.replace(/`([^`]+)`/g, function (_, c) { codes.push('<code>' + c + '</code>'); return '\u0000' + (codes.length - 1) + '\u0000'; });
+  s = s.replace(/\$([^$\n]+)\$/g, function (_, m) { codes.push('<span class="m">' + mathLine(m) + '</span>'); return '\u0000' + (codes.length - 1) + '\u0000'; });
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, a, u) { return safeUrl(u) ? '<img alt="' + a + '" src="' + u + '" loading="lazy">' : a; });
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, t, u) { return safeUrl(u) ? '<a href="' + u + '"' + (u.charAt(0) === '#' ? '' : ' target="_blank" rel="noopener"') + '>' + t + '</a>' : t; });
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, '$1<em>$2</em>');
+  s = s.replace(/(^|\W)_([^_\s][^_]*?)_(?!\w)/g, '$1<em>$2</em>');
+  s = s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return codes[+i]; });
+  return s;
+}
+function mathLine(s) { // already HTML-escaped: x_{sub}, x^{sup}, x_i, x^2, then *italic* and **bold**
+  s = s.replace(/_\{([^}]*)\}/g, '<sub>$1</sub>').replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>')
+       .replace(/_([A-Za-z0-9′])/g, '<sub>$1</sub>').replace(/\^([A-Za-z0-9′])/g, '<sup>$1</sup>');
+  return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*\s][^*]*?)\*/g, '<em>$1</em>').replace(/ {3,}/g, '<span class="sp"></span>').replace(/ {2}/g, ' ');
+}
+function md(src) {
+  var lines = esc(src || '').replace(/\r\n?/g, '\n').split('\n'), out = [], i = 0, para = [];
+  function flush() { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } }
+  while (i < lines.length) {
+    var l = lines[i], m;
+    if (/^```/.test(l)) {
+      flush(); var fm = /^```\s*viz\s+([\w-]+)\s*$/.exec(l);
+      if (fm) { i++; while (i < lines.length && !/^```/.test(lines[i])) i++; i++; out.push('<figure class="viz" data-viz="' + fm[1] + '"></figure>'); continue; }
+      if (/^```\s*math\s*$/.test(l)) { i++; var eqs = [];
+        while (i < lines.length && !/^```/.test(lines[i])) { var e = lines[i++]; var lm = /^\s*([A-Za-z][\w ,]*:)\s{2,}(.*)$/.exec(e), cont = /^\s{4,}\S/.test(e);
+          eqs.push(!e.trim() ? '<div class="eq-gap"></div>' : lm ? '<div class="eq"><span class="lbl">' + lm[1] + '</span>' + mathLine(lm[2].trim()) + '</div>'
+            : '<div class="eq' + (cont ? ' cont' : '') + '">' + mathLine(e.trim()) + '</div>'); }
+        i++; out.push('<div class="math" role="math">' + eqs.join('') + '</div>'); continue; }
+      var buf = []; i++;
+      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+      i++; out.push('<pre><code>' + buf.join('\n') + '</code></pre>'); continue;
+    }
+    if ((m = /^(#{1,4})\s+(.*)$/.exec(l))) { flush(); var lv = Math.min(4, m[1].length + 1); out.push('<h' + lv + '>' + inline(m[2]) + '</h' + lv + '>'); i++; continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { flush(); out.push('<hr>'); i++; continue; }
+    if (/^&gt;\s?/.test(l)) {
+      flush(); var q = [];
+      while (i < lines.length && /^&gt;\s?/.test(lines[i])) q.push(lines[i++].replace(/^&gt;\s?/, ''));
+      out.push('<blockquote>' + md2(q) + '</blockquote>'); continue;
+    }
+    if (/^\s*([-*+]|\d+[.)])\s+/.test(l)) {
+      flush(); var ordered = /^\s*\d/.test(l), items = [];
+      while (i < lines.length && /^\s*([-*+]|\d+[.)])\s+/.test(lines[i])) {
+        var it = lines[i++].replace(/^\s*([-*+]|\d+[.)])\s+/, '');
+        while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !/^\s*([-*+]|\d+[.)])\s+/.test(lines[i])) it += ' ' + lines[i++].trim();
+        items.push('<li>' + inline(it) + '</li>');
+      }
+      out.push((ordered ? '<ol>' : '<ul>') + items.join('') + (ordered ? '</ol>' : '</ul>')); continue;
+    }
+    if (/^\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\|[\s:|-]+\|\s*$/.test(lines[i+1])) {
+      flush();
+      var cells = function (r) { return r.trim().replace(/^\||\|$/g, '').split('|').map(function (c) { return inline(c.trim()); }); };
+      var head = cells(l); i += 2; var rows = [];
+      while (i < lines.length && /^\|.*\|\s*$/.test(lines[i])) rows.push(cells(lines[i++]));
+      out.push('<table><thead><tr>' + head.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+      continue;
+    }
+    if (/^\s*$/.test(l)) { flush(); i++; continue; }
+    para.push(l.trim()); i++;
+  }
+  flush();
+  return out.join('\n');
+}
+function md2(escapedLines) { // lines already escaped: unescape once, then run md
+  return md(escapedLines.join('\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
+}
+
+/* ---------- toast ---------- */
+var toastT;
+function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 3200); }
+
+/* ---------- owner + publishing ---------- */
+var isOwner = false, readOnly = false, artifactNS = null;
+var claudeUse = (window.claude && typeof window.claude.use === 'function') ? function (n) { return window.claude.use(n).catch(function () { return null; }); } : function () { return Promise.resolve(null); };
+claudeUse('user').then(function (u) { return u ? u.isOwner() : false; }).then(function (own) {
+  isOwner = !!own;
+  if (isOwner) { claudeUse('artifact').then(function (a) { artifactNS = a; if (a) { $('#new-entry').hidden = false; route(); restoreDraft(); } }); }
+});
+
+function buildHTML(data) {
+  var style = document.getElementById('app-style').textContent;
+  var shell = document.getElementById('shell').innerHTML;
+  var script = document.getElementById('app-script').textContent;
+  var json = JSON.stringify(data, null, 1).replace(/</g, '\\u003c');
+  var title = (data.site && data.site.title) || (data.site && data.site.name) || 'Robotics notebook';
+  var sc = 'scr' + 'ipt';
+  return '<!doctype html>\n<html lang="en">\n<head>\n' + HEAD_HTML + '\n<title>' + esc(title) + '</title>\n<style id="app-style">' + style + '</style>\n</head>\n<body>\n' +
+    '<template id="shell">' + shell + '</template>\n<div id="root"></div>\n' +
+    '<' + sc + ' type="application/json" id="site-data">' + json + '</' + sc + '>\n' +
+    '<' + sc + ' id="app-script">' + script + '</' + sc + '>\n</body>\n</html>\n';
+}
+
+function publishData(next, draft, label) {
+  if (!artifactNS || readOnly) { toast('Publishing isn’t available in this view.'); return Promise.resolve(false); }
+  try { if (draft) sessionStorage.setItem('nb-draft', JSON.stringify(draft)); } catch (e) {}
+  return artifactNS.publish(buildHTML(next)).then(function () {
+    try { sessionStorage.removeItem('nb-draft'); } catch (e) {}
+    try { sessionStorage.setItem('nb-flash', label); } catch (e) {}
+    DATA = next; toast(label); return true;
+  }, function (err) {
+    var code = err && err.code;
+    if (code === 'conflict') { toast('A newer version was published. Reloading with your draft kept.'); return false; }
+    try { sessionStorage.removeItem('nb-draft'); } catch (e) {}
+    if (code === 'not_writer' || code === 'not_granted' || code === 'not_declared') { readOnly = true; $('#new-entry').hidden = true; toast('This view is read-only, so entries can’t be published from here.'); }
+    else if (code === 'rate_limited') toast('Too many publishes in a row. Wait a minute, then publish again.');
+    else toast('Publishing failed. Check your connection and publish again.');
+    return false;
+  });
+}
+function restoreDraft() {
+  var d; try { d = JSON.parse(sessionStorage.getItem('nb-draft') || 'null'); } catch (e) { d = null; }
+  if (!d) return;
+  var saved = findEntry(d.id);
+  if (saved && saved.updated >= d.updated) { try { sessionStorage.removeItem('nb-draft'); } catch (e) {} return; }
+  pendingDraft = d; location.hash = saved ? '#/edit/' + d.id : '#/new'; toast('Restored your unpublished entry.');
+}
+var pendingDraft = null;
+try { var fl = sessionStorage.getItem('nb-flash'); if (fl) { sessionStorage.removeItem('nb-flash'); setTimeout(function () { toast(fl); }, 400); } } catch (e) {}
+
+/* ---------- views ---------- */
+function showHome() {
+  var list = sorted();
+  var items = list.map(function (e) {
+    var tags = (e.tags || []).length ? '<span class="e-tags">' + e.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</span>' : '';
+    return '<li><a class="entry-link" href="#/e/' + esc(e.id) + '"><time class="e-date" datetime="' + esc(e.date) + '">' + esc(fmtDate(e.date)) + '</time>' +
+      '<span class="e-title">' + esc(e.title) + '</span>' + (e.summary ? '<span class="e-sum">' + esc(e.summary) + '</span>' : '') + tags + '</a></li>';
+  }).join('');
+  var empty = '<div class="empty"><p>No entries yet.</p>' + (isOwner && artifactNS ? '<a class="btn primary" href="#/new">Write the first entry</a>' : '') + '</div>';
+  view.innerHTML =
+    '<section class="hero"><div><h1 class="name">' + esc(SITE.name || 'Robotics notebook') + '</h1>' +
+    '<p class="tagline">' + esc(SITE.tagline || '') + '</p></div><div class="now" id="now"></div></section>' +
+    '<div class="sheet"><section class="entries" aria-labelledby="entries-h"><div class="entries-head"><h2 id="entries-h">Entries</h2>' +
+    (list.length ? '<span class="count">' + list.length + (list.length === 1 ? ' entry' : ' entries') + '</span>' : '') + '</div>' +
+    (list.length ? '<ul class="entry-list">' + items + '</ul>' : empty) + '</section></div>';
+  document.title = SITE.title || SITE.name || 'Robotics notebook';
+  Backdrop.set(SITE.backdrop);
+}
+function showEntry(id) {
+  var e = findEntry(id);
+  if (!e) { view.innerHTML = '<div class="article-wrap"><article class="article"><a class="back" href="#/">Back to all entries</a><h1>Entry not found</h1><p class="prose">This entry may have been deleted or renamed. Go back to the list to find it.</p></article></div>'; return; }
+  var tags = (e.tags || []).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('');
+  var tools = (isOwner && artifactNS && !readOnly) ? '<span class="owner-tools"><a class="btn" href="#/edit/' + esc(e.id) + '">Edit</a><button class="btn danger" type="button" id="del">Delete</button></span>' : '';
+  view.innerHTML = '<div class="article-wrap"><article class="article"><a class="back" href="#/">Back to all entries</a>' +
+    '<h1>' + esc(e.title) + '</h1><div class="meta"><time datetime="' + esc(e.date) + '">' + esc(fmtDate(e.date)) + '</time>' + tags + tools + '</div>' +
+    '<div class="prose">' + md(e.body) + '</div></article></div>';
+  mountFigures(view);
+  document.title = e.title + ' | ' + (SITE.name || 'Robotics notebook');
+  Backdrop.set(e.backdrop);
+  var del = $('#del');
+  if (del) del.addEventListener('click', function () {
+    if (!confirm('Delete “' + e.title + '”? This publishes a new version without it.')) return;
+    del.disabled = true;
+    var next = JSON.parse(JSON.stringify(DATA)); next.entries = next.entries.filter(function (x) { return x.id !== e.id; });
+    publishData(next, null, 'Entry deleted').then(function (ok) { if (ok) location.hash = '#/'; else del.disabled = false; });
+  });
+}
+function backdropField(bd) {
+  var cur = bd ? bd.effect + ':' + (bd.formation || bd.variant || '') : '', effs = Backdrop.effects(), html = '';
+  Object.keys(effs).forEach(function (name) {
+    var def = effs[name];
+    html += '<optgroup label="' + esc(def.label) + '">' + def.options().map(function (o) {
+      var v = name + ':' + o.value; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+    }).join('') + '</optgroup>';
+  });
+  return '<div class="field"><label for="f-bg">Background</label><select id="f-bg"><option value=""' + (cur ? '' : ' selected') + '>Site default</option>' + html + '</select>' +
+    '<span class="hint">Shown behind this entry. Changing it here previews it live.</span></div>';
+}
+function readBackdrop() {
+  var v = ($('#f-bg') || {}).value || ''; if (!v) return null;
+  var i = v.indexOf(':'), name = v.slice(0, i), opt = v.slice(i + 1);
+  return name === 'life' ? { effect: 'life', formation: opt } : { effect: name, variant: opt };
+}
+function slugify(s) { return (String(s).toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 48) || 'entry'); }
+function showEditor(id) {
+  if (!isOwner || !artifactNS) { showHome(); return; }
+  var base = id ? findEntry(id) : null;
+  if (id && !base) { showEntry(id); return; }
+  var d = pendingDraft && ((id && pendingDraft.id === id) || (!id && !findEntry(pendingDraft.id))) ? pendingDraft : null;
+  pendingDraft = null;
+  var e = d || base || { title: '', date: today(), tags: [], summary: '', body: '' };
+  view.innerHTML = '<div class="article-wrap"><article class="article"><a class="back" href="' + (base ? '#/e/' + esc(base.id) : '#/') + '">Cancel</a>' +
+    '<h1>' + (base ? 'Edit entry' : 'New entry') + '</h1>' +
+    '<form class="editor" id="ed" novalidate>' +
+    '<div class="field"><label for="f-title">Title</label><input id="f-title" required maxlength="140" value="' + esc(e.title) + '"></div>' +
+    '<div class="row2"><div class="field"><label for="f-date">Date</label><input id="f-date" type="date" value="' + esc(e.date) + '"></div>' +
+    '<div class="field"><label for="f-tags">Tags</label><input id="f-tags" value="' + esc((e.tags || []).join(', ')) + '" placeholder="ros2, perception"><span class="hint">Separate tags with commas.</span></div></div>' +
+    backdropField(e.backdrop) + '<div class="field"><label for="f-sum">Summary</label><input id="f-sum" maxlength="240" value="' + esc(e.summary) + '"><span class="hint">One sentence shown in the entry list.</span></div>' +
+    '<div class="field"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem"><label for="f-body">Body</label>' +
+    '<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" aria-selected="true" id="t-write">Write</button><button type="button" class="tab" role="tab" aria-selected="false" id="t-prev">Preview</button></div></div>' +
+    '<textarea id="f-body" spellcheck="true">' + esc(e.body) + '</textarea><div class="preview prose" id="pv" hidden></div>' +
+    '<span class="hint">Markdown: # headings, **bold**, *italic*, `code`, ``` code blocks, lists, &gt; quotes, [links](https://…), tables. Images must be https links or data URLs. Live figures: ```viz motion-distortion```, ```viz ransac```, ```viz lidar-life```, ```viz rover-hunt```, ```viz rover-farm```. Equations: a ```math block, one equation per line, with x_{sub} and x^{sup}.</span></div>' +
+    '<p class="error-text" id="err" hidden></p>' +
+    '<div class="form-actions"><button class="btn primary" type="submit" id="pub">' + (base ? 'Publish changes' : 'Publish entry') + '</button>' +
+    '<a class="btn" href="' + (base ? '#/e/' + esc(base.id) : '#/') + '">Cancel</a><span class="note">Publishing updates the live site for everyone with the link.</span></div>' +
+    '</form></article></div>';
+  var tw = $('#t-write'), tp = $('#t-prev'), ta = $('#f-body'), pv = $('#pv');
+  tw.onclick = function () { tw.setAttribute('aria-selected', 'true'); tp.setAttribute('aria-selected', 'false'); ta.hidden = false; pv.hidden = true; ta.focus(); };
+  tp.onclick = function () { tp.setAttribute('aria-selected', 'true'); tw.setAttribute('aria-selected', 'false'); pv.innerHTML = md(ta.value) || '<p class="hint">Nothing to preview yet.</p>'; mountFigures(pv); pv.hidden = false; ta.hidden = true; };
+  $('#f-title').focus();
+  Backdrop.set(e.backdrop);
+  $('#f-bg').addEventListener('change', function () { Backdrop.set(readBackdrop()); });
+  $('#ed').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var title = $('#f-title').value.trim(), err = $('#err');
+    if (!title) { err.textContent = 'Add a title before publishing.'; err.hidden = false; $('#f-title').focus(); return; }
+    err.hidden = true;
+    var entry = {
+      id: base ? base.id : slugify(title) + '-' + Math.random().toString(36).slice(2, 6),
+      title: title, date: $('#f-date').value || today(),
+      tags: $('#f-tags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 8),
+      summary: $('#f-sum').value.trim(), body: ta.value, backdrop: readBackdrop(), updated: Date.now()
+    };
+    var next = JSON.parse(JSON.stringify(DATA));
+    if (base) next.entries = next.entries.map(function (x) { return x.id === base.id ? entry : x; }); else next.entries.push(entry);
+    var btn = $('#pub'); btn.disabled = true; btn.textContent = 'Publishing…';
+    publishData(next, entry, base ? 'Changes published' : 'Entry published').then(function (ok) {
+      if (ok) location.hash = '#/e/' + entry.id; else { btn.disabled = false; btn.textContent = base ? 'Publish changes' : 'Publish entry'; }
+    });
+  });
+}
+function route() {
+  unmountFigures();
+  var h = location.hash || '#/', m;
+  if ((m = /^#\/e\/([\w-]+)$/.exec(h))) showEntry(m[1]);
+  else if (h === '#/new') showEditor(null);
+  else if ((m = /^#\/edit\/([\w-]+)$/.exec(h))) showEditor(m[1]);
+  else if (h === '#about-background') { showHome(); if (Backdrop.last()) renderCaptions(Backdrop.last()); var c = $('.colophon'); if (c) c.scrollIntoView(); return; }
+  else showHome();
+  if (Backdrop.last()) renderCaptions(Backdrop.last());
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   BACKDROP
+   The page background is a pluggable "effect". Each entry can choose one
+   (entry.backdrop = {effect, ...options}); the home page uses
+   SITE.backdrop or the default below. To add a new effect (for example a
+   LIDAR scan that reveals a 3D object where the reader clicks):
+
+     Backdrop.register('lidar', {
+       label: 'LIDAR scan',
+       options: function () { return [{ value: 'bunny', label: 'Stanford bunny' }]; }, // editor choices
+       create: function (host, spec) {
+         // host.canvas / host.ctx: full-viewport canvas behind the page
+         // host.caption({title, credit, text, legend:[{color,label}], actions:[{id,label}]}): updates the key and footer
+         // host.reveal() / host.hide(): fade the canvas in or out
+         // host.reduced: true when the reader prefers reduced motion
+         return {
+           update: function (spec) {},        // same effect, new options
+           pointer: function (x, y) {},       // clicks on empty page areas, in CSS px
+           setPaused: function (p) {}, action: function (id) {}, resize: function () {},
+           destroy: function () {}
+         };
+       }
+     });
+   ===================================================================== */
+var DEFAULT_BACKDROP = { effect: 'life', formation: 'cycle' };
+var Backdrop = (function () {
+  var effects = {}, active = null, activeName = null, activeKey = '', paused = false, lastCaption = null, capListeners = [];
+  var canvas = $('#life'), ctx = canvas.getContext('2d', { alpha: false });
+  var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var playPref = null; try { playPref = localStorage.getItem('nb-bg-play'); } catch (e) {}
+  paused = playPref ? playPref === 'paused' : reduced; // reduced motion starts paused unless this reader chose otherwise
+  var host = {
+    canvas: canvas, ctx: ctx, reduced: reduced,
+    caption: function (c) { lastCaption = c; capListeners.forEach(function (f) { f(c); }); },
+    reveal: function () { canvas.classList.add('on'); },
+    hide: function () { canvas.classList.remove('on'); },
+    isPaused: function () { return paused; }
+  };
+  function normal(spec) { spec = spec && effects[spec.effect] ? spec : (SITE.backdrop && effects[SITE.backdrop.effect] ? SITE.backdrop : DEFAULT_BACKDROP); return spec; }
+  return {
+    register: function (name, def) { effects[name] = def; },
+    effects: function () { return effects; },
+    set: function (spec) {
+      spec = normal(spec); var k = JSON.stringify(spec);
+      if (k === activeKey) return; activeKey = k;
+      if (active && activeName === spec.effect && active.update) { active.update(spec); return; }
+      if (active) active.destroy();
+      activeName = spec.effect; active = effects[spec.effect].create(host, spec);
+      if (active.setPaused) active.setPaused(paused);
+    },
+    setPaused: function (p) { paused = p; try { localStorage.setItem('nb-bg-play', p ? 'paused' : 'playing'); } catch (e) {} if (active && active.setPaused) active.setPaused(p); },
+    isPaused: function () { return paused; },
+    next: function () { if (active && active.next) active.next(); },
+    action: function (id) { if (id === 'next') { if (active && active.next) active.next(); } else if (active && active.action) active.action(id); },
+    pointer: function (x, y) { return !!(active && active.pointer && active.pointer(x, y)); },
+    resize: function () { if (active && active.resize) active.resize(); },
+    onCaption: function (f) { capListeners.push(f); if (lastCaption) f(lastCaption); },
+    last: function () { return lastCaption; }
+  };
+})();
+
+/* Clicks on empty parts of the page (not text, links, forms or panels) go to the effect. */
+document.addEventListener('pointerdown', function (ev) {
+  if (ev.button !== 0) return;
+  if (ev.target.closest('a,button,input,textarea,select,label,summary,.article,.entries,.colophon,.name,.tagline,.now')) return;
+  Backdrop.pointer(ev.clientX, ev.clientY);
+});
+var resizeT;
+window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(function () { Backdrop.resize(); }, 250); });
+
+/* ---------- Game of Life effect ---------- */
+(function () {
+  function P(name) { return { cells: decodeRLE(PATTERNS[name].rle), w: PATTERNS[name].w, h: PATTERNS[name].h }; }
+  /* Each formation: fit = how many cells span the viewport's short side; layout places the
+     pattern in view coordinates (u runs along the main motion, v across it); done() ends the run. */
+  var FORMATIONS = [
+    { id: 'breeder', pat: 'breeder', name: 'Gosper breeder', credit: 'Bill Gosper and colleagues at MIT, early 1970s', fit: 430, gps: 30, mode: 'breeder',
+      text: 'The first pattern shown to grow quadratically. A train of puffers moves right and drops a trail of debris; gliders from rakes riding with the train shape that debris into glider guns, and every gun fires a glider each 30 generations.',
+      legend: [['red', 'Puffer train and its debris'], ['green', 'Glider guns'], ['blue', 'Gliders']],
+      layout: function (vu, vv, p) { var pV = Math.round(vv * 0.7) - 170, pU = Math.round(vu * 0.8) - (p.w - 1);
+        return { pU: pU, pV: pV, ml: Math.max(16, -pU + 8), mt: 16, mr: 470, mb: Math.max(12, pV + p.h + 12 - vv) }; },
+      init: function (S) { S.gunLine = -1e9; S.walled = false; S.windDown = 0; },
+      tick: function (S) { var front = S.pU + (S.p.w - 1) + Math.floor(S.W.gen / 2);
+        if (!S.walled) S.gunLine = front - 755;
+        if (!S.walled && front > S.vu + 440) { S.walled = true; S.W.wall = S.vu + S.W.LM + 4; }
+        if (S.walled) S.windDown++; },
+      done: function (S) { return S.windDown > 700; } },
+    { id: 'rake-factory', pat: 'rakefactory', name: 'p90 rake factory', credit: 'Dieter Leithner, 1994', fit: 430, gps: 30, mode: 'generic',
+      text: 'A stationary breeder. A gun on the left builds a new rake every 90 generations; each rake is a puffer whose exhaust is gliders, so the rakes stream right while laying diagonal rows of gliders behind them.',
+      legend: [['green', 'Rake gun and settled debris'], ['red', 'Rakes on the move'], ['blue', 'Gliders']],
+      layout: function (vu, vv, p) { return { pU: Math.round(vu * 0.3), pV: Math.round(vv * 0.33), ml: 60, mt: 60, mr: 80, mb: 60 }; },
+      done: function (S) { return S.W.gen > 1500; } },
+    { id: 'acorn', pat: 'acorn', name: 'Acorn', credit: 'Charles Corderman', fit: 215, gps: 48, mode: 'generic',
+      text: 'A methuselah: seven cells that take 5,206 generations to settle. The reaction churns outward, throws off gliders, and leaves a field of still lifes and blinkers behind it.',
+      legend: [['red', 'Active reaction'], ['green', 'Settled debris'], ['blue', 'Escaping gliders']],
+      layout: function (vu, vv, p) { return { pU: Math.round(vu * 0.7), pV: Math.round(vv * 0.52), ml: 40, mt: 40, mr: 40, mb: 40 }; },
+      done: function (S) { return S.W.gen > 2700; } },
+    { id: 'gosper-gun', pat: 'gosper', name: 'Gosper glider gun', credit: 'Bill Gosper, 1970', fit: 105, gps: 24, mode: 'gun',
+      text: 'The first known gun, and the pattern that proved a finite start can grow forever. Two shuttles collide every 30 generations and release one glider.',
+      legend: [['green', 'Glider gun'], ['blue', 'Gliders']],
+      layout: function (vu, vv, p) { return { pU: Math.round(vu * 0.42), pV: Math.round(vv * 0.06), ml: 30, mt: 30, mr: 30, mb: 30 }; },
+      done: function (S) { return S.W.gen > 4 * (S.vv + 10); } },
+    { id: 'puffer-train', pat: 'puffertrain', name: 'Puffer train', credit: 'author unknown, from Alan Hensel’s lifebc collection', fit: 140, gps: 20, mode: 'generic',
+      text: 'A B-heptomino escorted by two lightweight spaceships. On its own the heptomino burns out, but the escorts keep it alive, so it travels right at half the speed of light and leaves a trail of smoke.',
+      legend: [['red', 'Puffer and live smoke'], ['green', 'Settled debris'], ['blue', 'Gliders']],
+      layout: function (vu, vv, p) { return { pU: 4, pV: Math.round(vv * 0.66) - 9, ml: 30, mt: 40, mr: 40, mb: 40 }; },
+      done: function (S) { return S.W.gen > 2 * (S.vu + 60); } },
+    { id: 'spacefiller', pat: 'spacefiller', name: 'Spacefiller', credit: 'Hartmut Holzwart, 1998', fit: 290, gps: 20, mode: 'generic', dim: 0.5,
+      text: 'The fastest growth possible in Life. Four stretchers pull outward at half the speed of light and leave agar, a repeating texture, at the highest density known.',
+      legend: [['green', 'Agar'], ['red', 'Stretchers']],
+      layout: function (vu, vv, p) { return { pU: Math.round(vu * 0.5 - p.w / 2), pV: Math.round(vv * 0.5 - p.h / 2), ml: 110, mt: 110, mr: 110, mb: 110 }; },
+      done: function (S) { return S.W.gen > 2 * (Math.min(S.vu, S.vv) / 2 + 100); } }
+  ];
+  var BY_ID = {}; FORMATIONS.forEach(function (f) { BY_ID[f.id] = f; });
+
+  var PAL = { red: [224, 104, 95], green: [111, 181, 125], blue: [116, 163, 227] }, BG = [38, 38, 36];
+  var CIDX = [BG, PAL.red, PAL.green, PAL.blue], LV = 32, DEC = new Uint8Array(LV);
+  for (var k = 0; k < LV; k++) DEC[k] = k === 0 ? 0 : Math.max(0, Math.floor((k === LV - 1 ? LV - 3 : k) * 0.72));
+  var LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+  function makeLUT(dim) {
+    var L = new Uint32Array(4 * LV);
+    for (var c = 0; c < 4; c++) for (var l = 0; l < LV; l++) {
+      var a = (l === LV - 1 ? 0.9 : Math.pow(l / (LV - 1), 1.6) * 0.42) * dim, C = CIDX[c];
+      var r = Math.round(BG[0] + (C[0] - BG[0]) * a), g = Math.round(BG[1] + (C[1] - BG[1]) * a), b = Math.round(BG[2] + (C[2] - BG[2]) * a);
+      L[c * LV + l] = LE ? (255 << 24 | b << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | b << 8 | 255) >>> 0;
+    }
+    return L;
+  }
+
+  Backdrop.register('life', {
+    label: 'Game of Life',
+    options: function () { return [{ value: 'cycle', label: 'Cycle through all patterns' }].concat(FORMATIONS.map(function (f) { return { value: f.id, label: f.name }; })); },
+    create: function (host, spec) {
+      var canvas = host.canvas, ctx = host.ctx, S = null, raf = 0, last = 0, paused = host.isPaused(), fading = false, fadeT = 0;
+      var pinned = spec.formation && BY_ID[spec.formation] ? spec.formation : null;
+      var order = FORMATIONS.map(function (f) { return f.id; }), idx = 0;
+
+      function caption(F) {
+        host.caption({ title: F.name, credit: F.credit, text: F.text, actions: pinned ? [] : [{ id: 'next', label: 'Show next pattern' }],
+          legend: F.legend.map(function (l) { return { color: l[0], label: l[1] }; }) });
+      }
+      function setup(F) {
+        var w = window.innerWidth, h = window.innerHeight, portrait = h > w * 1.1;
+        var shortPx = portrait ? w : h, cell = Math.min(6, Math.max(1, shortPx / F.fit));
+        var cols = Math.ceil(w / cell), rows = Math.ceil(h / cell);
+        var vu = portrait ? rows : cols, vv = portrait ? cols : rows, p = P(F.pat), L = F.layout(vu, vv, p);
+        canvas.width = cols; canvas.height = rows;
+        canvas.style.width = (cols * cell) + 'px'; canvas.style.height = (rows * cell) + 'px';
+        var img = ctx.createImageData(cols, rows);
+        var W = makeWorld({ viewU: vu, viewV: vv, cells: p.cells, pU: L.pU, pV: L.pV, ml: L.ml, mt: L.mt, mr: L.mr, mb: L.mb });
+        S = { F: F, W: W, p: p, pU: L.pU, vu: vu, vv: vv, portrait: portrait, cols: cols, rows: rows, cell: cell, w: w, h: h,
+              img: img, px: new Uint32Array(img.data.buffer), lvl: new Uint8Array(cols * rows), cid: new Uint8Array(cols * rows),
+              cls: new Uint8Array(W.GW * W.GH), lut: makeLUT(F.dim || 1), acc: 0, warm: F.id === 'breeder' ? 450 : 0 };
+        if (F.init) F.init(S);
+        S.px.fill(S.lut[0]); ctx.putImageData(img, 0, 0);
+        caption(F);
+        if (paused) { settle(); paint(); host.reveal(); }
+        else if (!S.warm) { paint(); host.reveal(); }
+      }
+      function stepOnce() { S.W.step(); if (S.F.tick) S.F.tick(S); }
+      function classify() { S.W.classify(S.cls, S.F.mode === 'breeder' ? 'breeder' : 'generic', (S.gunLine || 0) + S.W.LM); }
+      function settle() { // reduced motion: jump to a representative moment and hold still
+        var target = S.F.id === 'breeder' ? 1000 : S.F.id === 'spacefiller' ? Math.round(Math.min(S.vu, S.vv) * 0.7) : 600;
+        for (var i = 0; i < target; i++) { stepOnce(); if (i % 8 === 0) classify(); }
+      }
+      function paint() {
+        var W = S.W, cur = W.cur(), live = W.live(), n = W.liveN, cls = S.cls, cols = S.cols, LM = W.LM, TM = W.TM, GW = W.GW, lvl = S.lvl, cid = S.cid;
+        classify();
+        var gunMode = S.F.mode === 'gun', N = lvl.length, i;
+        for (i = 0; i < N; i++) if (lvl[i]) lvl[i] = DEC[lvl[i]];
+        for (var q = 0; q < n; q++) {
+          var p = live[q]; if (!cur[p]) continue;
+          var gx = p % GW, gy = (p - gx) / GW, u = gx - LM, v = gy - TM;
+          if (u < 0 || v < 0 || u >= S.vu || v >= S.vv) continue;
+          var ix = S.portrait ? u * cols + v : v * cols + u, c = cls[p] || 1;
+          if (gunMode && c !== 3) c = 2;
+          lvl[ix] = LV - 1; cid[ix] = c;
+        }
+        var lut = S.lut, px = S.px;
+        for (i = 0; i < N; i++) px[i] = lut[cid[i] * LV + lvl[i]];
+        ctx.putImageData(S.img, 0, 0);
+      }
+      function advance() { // move to the next formation with a fade
+        if (fading) return; fading = true; host.hide();
+        clearTimeout(fadeT);
+        fadeT = setTimeout(function () {
+          fading = false;
+          if (!pinned) idx = (idx + 1) % order.length;
+          setup(BY_ID[pinned || order[idx]]);
+        }, host.reduced ? 0 : 1300);
+      }
+      function frame(t) {
+        raf = requestAnimationFrame(frame);
+        if (!S || fading) { last = t; return; }
+        var dt = Math.min(0.1, (t - last) / 1000 || 0); last = t;
+        if (S.warm > 0 && !paused) { var k = Math.min(S.warm, 12); for (var j = 0; j < k; j++) stepOnce(); S.warm -= k; classify(); if (S.warm <= 0) { paint(); host.reveal(); } return; }
+        if (paused) return;
+        S.acc += dt * S.F.gps; var steps = Math.min(4, Math.floor(S.acc)); S.acc -= steps;
+        if (!steps) return;
+        for (var s = 0; s < steps; s++) stepOnce();
+        paint();
+        if (S.F.done(S)) advance();
+      }
+      if (pinned) idx = order.indexOf(pinned);
+      setup(BY_ID[order[idx]]);
+      raf = requestAnimationFrame(frame);
+
+      return {
+        update: function (spec2) {
+          var want = spec2.formation && BY_ID[spec2.formation] ? spec2.formation : null;
+          if (want === pinned) return;
+          pinned = want;
+          if (!pinned) { caption(S.F); return; }        // back to cycling: let the current pattern finish
+          if (S && S.F.id === pinned) { caption(S.F); return; } // already showing it: just stop cycling
+          idx = order.indexOf(pinned); advance();
+        },
+        setPaused: function (p) { paused = p; last = performance.now(); },
+        next: function () { if (!pinned) advance(); },
+        resize: function () {
+          if (!S) return;
+          var w = window.innerWidth, h = window.innerHeight, portrait = h > w * 1.1;
+          var pw = S.cols * S.cell, ph = S.rows * S.cell;
+          if (portrait !== S.portrait || Math.abs(w - pw) / pw > 0.12 || h > ph * 1.12 || h < ph * 0.7) { host.hide(); setup(S.F); }
+        },
+        pointer: function () { return false; },
+        destroy: function () { cancelAnimationFrame(raf); clearTimeout(fadeT); host.hide(); }
+      };
+    }
+  });
+})();
+
+/* ---------- LIDAR effect: click to scan a hidden robot arm ---------- */
+(function () {
+  function v(x, y, z) { return [x, y, z]; }
+  function add(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+  function mul(a, s) { return [a[0] * s, a[1] * s, a[2] * s]; }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function norm(a) { var l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+
+  /* The scene is a signed distance field built from simple parts. */
+  function sdCyl(px, py, pz, c, ax, r, h) { // capped cylinder, centre c, unit axis ax, radius r, half-length h
+    var dx = px - c[0], dy = py - c[1], dz = pz - c[2], al = dx * ax[0] + dy * ax[1] + dz * ax[2];
+    var rx = dx - ax[0] * al, ry = dy - ax[1] * al, rz = dz - ax[2] * al;
+    var a = Math.sqrt(rx * rx + ry * ry + rz * rz) - r, b = Math.abs(al) - h;
+    return Math.min(Math.max(a, b), 0) + Math.hypot(Math.max(a, 0), Math.max(b, 0));
+  }
+  function sdCap(px, py, pz, a, b, r) { // capsule a-b
+    var bax = b[0] - a[0], bay = b[1] - a[1], baz = b[2] - a[2], pax = px - a[0], pay = py - a[1], paz = pz - a[2];
+    var h = Math.max(0, Math.min(1, (pax * bax + pay * bay + paz * baz) / (bax * bax + bay * bay + baz * baz)));
+    return Math.hypot(pax - bax * h, pay - bay * h, paz - baz * h) - r;
+  }
+  function robotArm() {
+    var UP = v(0, 1, 0), yaw = 0.35, f = norm(v(Math.cos(yaw), 0, Math.sin(yaw))), j = norm(cross(f, UP));
+    var a1 = 62 * Math.PI / 180, a2 = -28 * Math.PI / 180, a3 = -70 * Math.PI / 180;
+    var S = v(0, 0.66, 0);
+    var d1 = add(mul(f, Math.cos(a1)), mul(UP, Math.sin(a1))), E = add(S, mul(d1, 1.0));
+    var d2 = add(mul(f, Math.cos(a2)), mul(UP, Math.sin(a2))), Wr = add(E, mul(d2, 0.82));
+    var d3 = norm(add(mul(f, Math.cos(a3)), mul(UP, Math.sin(a3)))), T = add(Wr, mul(d3, 0.16));
+    var fingerBase = add(T, mul(d3, 0.05)), fingerTip = add(T, mul(d3, 0.3));
+    var parts = [
+      function (x, y, z) { return sdCyl(x, y, z, v(0, 0.08, 0), UP, 0.5, 0.08) - 0.01; },            // base plate
+      function (x, y, z) { return sdCyl(x, y, z, v(0, 0.3, 0), UP, 0.3, 0.16) - 0.02; },              // turret
+      function (x, y, z) { return sdCyl(x, y, z, S, j, 0.21, 0.24) - 0.02; },                         // shoulder joint
+      function (x, y, z) { return sdCap(x, y, z, add(S, mul(d1, 0.12)), add(E, mul(d1, -0.1)), 0.12); }, // upper arm
+      function (x, y, z) { return sdCyl(x, y, z, E, j, 0.16, 0.19) - 0.015; },                        // elbow joint
+      function (x, y, z) { return sdCap(x, y, z, add(E, mul(d2, 0.1)), add(Wr, mul(d2, -0.06)), 0.085); }, // forearm
+      function (x, y, z) { return sdCyl(x, y, z, Wr, j, 0.1, 0.12) - 0.01; },                         // wrist joint
+      function (x, y, z) { return sdCap(x, y, z, Wr, T, 0.07); },                                      // wrist link
+      function (x, y, z) { return sdCap(x, y, z, add(T, mul(j, -0.13)), add(T, mul(j, 0.13)), 0.05); }, // gripper palm
+      function (x, y, z) { return sdCap(x, y, z, add(fingerBase, mul(j, 0.1)), add(fingerTip, mul(j, 0.07)), 0.03); },
+      function (x, y, z) { return sdCap(x, y, z, add(fingerBase, mul(j, -0.1)), add(fingerTip, mul(j, -0.07)), 0.03); },
+      function (x, y, z) { return sdCyl(x, y, z, add(fingerTip, mul(d3, 0.25)), UP, 0.09, 0.09) - 0.01; } // a part on the floor
+    ];
+    // the part the gripper is reaching for sits on the floor below the fingers
+    var tipFloor = v(fingerTip[0], 0.09, fingerTip[2]);
+    parts[11] = function (x, y, z) { return sdCyl(x, y, z, tipFloor, UP, 0.1, 0.09) - 0.01; };
+    return { sdf: function (x, y, z) { var d = 1e9; for (var i = 0; i < parts.length; i++) { var q = parts[i](x, y, z); if (q < d) d = q; } return d; },
+             target: v(0.35, 0.85, 0.15), radius: 2.1, floorR: 2.6 };
+  }
+  var SCENES = { 'robot-arm': { label: 'Robot arm', build: robotArm } };
+
+  /* colour by height, like most LIDAR viewers */
+  var STOPS = [[0, [70, 110, 180]], [0.35, [92, 176, 150]], [0.8, [230, 184, 92]], [1.35, [224, 104, 95]], [1.8, [236, 140, 190]]];
+  function heightColor(y) {
+    if (y <= STOPS[0][0]) return STOPS[0][1];
+    for (var i = 1; i < STOPS.length; i++) if (y <= STOPS[i][0]) { var a = STOPS[i - 1], b = STOPS[i], t = (y - a[0]) / (b[0] - a[0]);
+      return [a[1][0] + (b[1][0] - a[1][0]) * t, a[1][1] + (b[1][1] - a[1][1]) * t, a[1][2] + (b[1][2] - a[1][2]) * t]; }
+    return STOPS[STOPS.length - 1][1];
+  }
+  function hex(c) { return '#' + c.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }).join(''); }
+  var BG = [38, 38, 36], LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+  function pack(r, g, b) { r |= 0; g |= 0; b |= 0; return LE ? (255 << 24 | b << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | b << 8 | 255) >>> 0; }
+
+  Backdrop.register('lidar', {
+    label: 'LIDAR scan',
+    options: function () { return Object.keys(SCENES).map(function (k) { return { value: k, label: SCENES[k].label }; }); },
+    create: function (host, spec) {
+      var canvas = host.canvas, ctx = host.ctx, raf = 0, paused = host.isPaused(), t0 = performance.now();
+      var scene = (SCENES[spec.variant] || SCENES['robot-arm']).build();
+      var CAP = 140000, px = new Float32Array(CAP), py = new Float32Array(CAP), pz = new Float32Array(CAP), born = new Float64Array(CAP), col = new Uint32Array(CAP * 2);
+      var count = 0, head = 0, pulses = [], W = 0, H = 0, img, buf, lastInput = performance.now(), autoT = 0, orbitT = 0, lastFrame = 0, dirty = true;
+      var cam = {};
+
+      function size() {
+        W = Math.ceil(window.innerWidth); H = Math.ceil(window.innerHeight);
+        canvas.width = W; canvas.height = H; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        img = ctx.createImageData(W, H); buf = new Uint32Array(img.data.buffer); dirty = true;
+      }
+      function camera() {
+        var portrait = H > W * 1.1, ang = -0.55 + 0.32 * Math.sin(orbitT * 0.11), dist = portrait ? 6.4 : 6.0;
+        var tg = scene.target, pos = [tg[0] + Math.sin(ang) * dist, tg[1] + 1.25, tg[2] + Math.cos(ang) * dist];
+        var F = norm(sub(tg, pos)), R = norm(cross(F, [0, 1, 0])), U = cross(R, F);
+        var fov = 36 * Math.PI / 180, fl = portrait ? W * 1.05 : (H / 2) / Math.tan(fov / 2);
+        cam = { pos: pos, F: F, R: R, U: U, fl: fl, cx: portrait ? W * 0.5 : W * 0.74, cy: portrait ? H * 0.58 : H * 0.52 };
+      }
+      function rayDir(sx, sy) { return norm(add(cam.F, add(mul(cam.R, (sx - cam.cx) / cam.fl), mul(cam.U, -(sy - cam.cy) / cam.fl)))); }
+      function trace(o, d) { // returns hit point or null: robot (sphere-traced) or the floor disc
+        var best = Infinity, hit = null;
+        if (d[1] < -1e-4) { var tf = -o[1] / d[1], fx = o[0] + d[0] * tf, fz = o[2] + d[2] * tf;
+          if (Math.hypot(fx - scene.target[0], fz - scene.target[2]) < scene.floorR) { best = tf; hit = [fx, 0, fz]; } }
+        // bounding sphere test before marching
+        var oc = sub(o, scene.target), b = dot(oc, d), c = dot(oc, oc) - scene.radius * scene.radius, disc = b * b - c;
+        if (disc < 0) return hit;
+        var t = Math.max(0, -b - Math.sqrt(disc)), tEnd = Math.min(best, -b + Math.sqrt(disc));
+        for (var i = 0; i < 90 && t < tEnd; i++) {
+          var x = o[0] + d[0] * t, y = o[1] + d[1] * t, z = o[2] + d[2] * t, dd = scene.sdf(x, y, z);
+          if (dd < 0.0025) return [x, y, z];
+          t += dd;
+        }
+        return hit;
+      }
+      function scan(sx, sy, now) {
+        var D = rayDir(sx, sy), R = norm(cross(D, [0, 1, 0])), U = cross(R, D);
+        var CH = 16, AZ = 150, spreadE = 0.075, spreadA = 0.15, sweep = host.reduced ? 0 : 420;
+        for (var ch = 0; ch < CH; ch++) {
+          var e = (ch / (CH - 1) - 0.5) * 2 * spreadE;
+          for (var k = 0; k < AZ; k++) {
+            var a = (k / (AZ - 1) - 0.5) * 2 * spreadA + (Math.random() - 0.5) * 0.0015;
+            var d = norm(add(D, add(mul(R, a), mul(U, e + (Math.random() - 0.5) * 0.001))));
+            var h = trace(cam.pos, d); if (!h) continue;
+            var i = head; head = (head + 1) % CAP; if (count < CAP) count++;
+            px[i] = h[0]; py[i] = h[1]; pz[i] = h[2]; born[i] = now + (k / AZ) * sweep;
+            var c = heightColor(h[1]), floor = h[1] < 0.001, alpha = floor ? 0.42 : 0.92;
+            col[i * 2] = pack(BG[0] + (c[0] - BG[0]) * alpha, BG[1] + (c[1] - BG[1]) * alpha, BG[2] + (c[2] - BG[2]) * alpha);
+            col[i * 2 + 1] = floor ? 1 : 2;
+          }
+        }
+        pulses.push({ x: sx, y: sy, t: now }); dirty = true;
+      }
+      function autoScan(now) { // aim at a random spot on the arm so it reveals itself between clicks
+        var tg = add(scene.target, [(Math.random() - 0.5) * 1.3, (Math.random() - 0.45) * 1.5, (Math.random() - 0.5) * 1.0]);
+        var d = sub(tg, cam.pos), z = dot(d, cam.F);
+        scan(cam.cx + cam.fl * dot(d, cam.R) / z, cam.cy - cam.fl * dot(d, cam.U) / z, now);
+      }
+      function draw(now) {
+        var bgc = pack(BG[0], BG[1], BG[2]); buf.fill(bgc);
+        var F = cam.F, R = cam.R, U = cam.U, P = cam.pos, fl = cam.fl, cx = cam.cx, cy = cam.cy;
+        for (var i = 0; i < count; i++) {
+          var age = now - born[i]; if (age < 0) continue;
+          var dx = px[i] - P[0], dy = py[i] - P[1], dz = pz[i] - P[2], z = dx * F[0] + dy * F[1] + dz * F[2];
+          if (z < 0.1) continue;
+          var sx = (cx + fl * (dx * R[0] + dy * R[1] + dz * R[2]) / z) | 0, sy = (cy - fl * (dx * U[0] + dy * U[1] + dz * U[2]) / z) | 0;
+          if (sx < 0 || sy < 0 || sx >= W - 1 || sy >= H - 1) continue;
+          var c = age < 160 ? pack(250, 248, 240) : col[i * 2], o = sy * W + sx;
+          buf[o] = c; if (col[i * 2 + 1] === 2 || age < 160) { buf[o + 1] = c; buf[o + W] = c; buf[o + W + 1] = c; }
+        }
+        ctx.putImageData(img, 0, 0);
+        ctx.lineWidth = 1;
+        pulses = pulses.filter(function (p) { var a = (now - p.t) / 700; if (a > 1) return false;
+          ctx.strokeStyle = 'rgba(240,238,230,' + (0.5 * (1 - a)).toFixed(3) + ')';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 6 + a * 46, 0, Math.PI * 2); ctx.stroke(); return true; });
+      }
+      function frame(now) {
+        raf = requestAnimationFrame(frame);
+        var dt = Math.min(0.1, (now - lastFrame) / 1000 || 0); lastFrame = now;
+        var moving = !paused;
+        if (moving) { orbitT += dt; camera(); dirty = true; }
+        if (moving && now - lastInput > 6000 && now > autoT) { autoScan(now); autoT = now + 2600; }
+        if (pulses.length || now - t0 < 3000) dirty = true;
+        if (dirty) { draw(now); dirty = pulses.length > 0; }
+      }
+      host.caption({ title: 'LIDAR scan: ' + (SCENES[spec.variant] || SCENES['robot-arm']).label, credit: 'click anywhere on the background to scan',
+        text: 'A robot arm is hidden in the background. Each click fires a burst of 2,400 laser rays from your viewpoint in 16 scan lines, like a spinning LIDAR, and every ray that hits the arm or the floor leaves a point. The view slowly orbits so the points show their depth.',
+        legend: STOPS.map(function (s, i) { return { color: hex(s[1]), label: ['Floor', 'Base', 'Lower arm', 'Upper arm', 'Highest points'][i] }; }),
+        actions: [{ id: 'clear', label: 'Clear points' }] });
+      size(); camera();
+      var now0 = performance.now();
+      if (host.reduced || paused) { for (var n = 0; n < 6; n++) autoScan(now0 - 1000); } else { [300, 900, 1500].forEach(function (d) { setTimeout(function () { autoScan(performance.now()); }, d); }); }
+      host.reveal(); raf = requestAnimationFrame(frame);
+      return {
+        update: function () {},
+        pointer: function (x, y) { lastInput = performance.now(); scan(x, y, lastInput); return true; },
+        setPaused: function (p) { paused = p; lastFrame = performance.now(); },
+        action: function (id) { if (id === 'clear') { count = 0; head = 0; dirty = true; } },
+        resize: function () { size(); camera(); },
+        destroy: function () { cancelAnimationFrame(raf); host.hide(); }
+      };
+    }
+  });
+})();
+
+/* ---------- captions: hero key and footer follow whatever is running ---------- */
+function legendItems(c) { return c.legend.map(function (l) { var hexc = /^#[0-9a-f]{6}$/i.test(l.color);
+  return '<li><span class="sw' + (hexc ? '' : ' ' + esc(l.color)) + '"' + (hexc ? ' style="background:' + l.color + '"' : '') + '></span>' + esc(l.label) + '</li>'; }).join(''); }
+function renderCaptions(c) {
+  var now = $('#now');
+  if (now) now.innerHTML = '<p class="now-line"><span class="now-title">' + esc(c.title) + '</span> <span class="now-credit">' + esc(c.credit) + '</span></p>' +
+    '<ul class="legend" aria-label="Background key">' + legendItems(c) + '</ul>' +
+    '<p class="now-actions"><a href="#about-background">What am I looking at?</a>' + (c.actions || []).map(function (a) { return '<button type="button" class="linkish" data-action="' + esc(a.id) + '">' + esc(a.label) + '</button>'; }).join('') + '</p>';
+  var col = $('#colophon-now');
+  if (col) col.innerHTML = '<ul class="legend" aria-label="Background key">' + legendItems(c) + '</ul>' +
+    '<p><span class="col-title">Now running: ' + esc(c.title) + '</span> (' + esc(c.credit) + '). ' + esc(c.text) + '</p>';
+  var gen = $('#colophon-general');
+  if (gen) gen.textContent = /^LIDAR/.test(c.title) ? 'This entry uses a LIDAR background. Other pages run Conway\u2019s Game of Life, computed live in your browser from patterns in the Golly pattern collection.' : 'The background is Conway\u2019s Game of Life, computed live in your browser. It cycles through patterns from the Golly pattern collection, and each entry can pick its own background.';
+}
+Backdrop.onCaption(renderCaptions);
+document.addEventListener('click', function (ev) { var b = ev.target.closest('[data-action]'); if (b) Backdrop.action(b.getAttribute('data-action')); });
+
+/* ---------- pause control ---------- */
+var tog = $('#sim-toggle');
+function syncToggle() {
+  var paused = Backdrop.isPaused();
+  tog.setAttribute('aria-pressed', String(paused));
+  tog.querySelector('.lbl').textContent = paused ? 'Play background' : 'Pause background';
+  tog.querySelector('svg').innerHTML = paused ? '<path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/>' : '<rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/>';
+  tog.setAttribute('aria-label', paused ? 'Play background' : 'Pause background');
+}
+tog.addEventListener('click', function () { Backdrop.setPaused(!Backdrop.isPaused()); syncToggle(); });
+syncToggle();
+
+/* ---------- Hunter: the LIDAR rover as an immortal live cell that tries to destroy live cells ----------
+   Each generation: scan -> choose a move -> step onto the target cell (a live cell there is a DIRECT kill)
+   -> Life steps with the rover counted as a live neighbour -> the rover's cell is forced alive.
+   INDIRECT effects are measured against a counterfactual: the same neighbourhood with the rover's cell
+   holding whatever was there before it arrived. A neighbour that would have lived but dies is an indirect
+   kill; one that would have been dead but lives is a cell the rover created. A twin world with no rover,
+   fed the identical glider schedule, tracks the long-run (cascade) effect on population. */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+var HUNT_STRATEGIES = [
+  { id: 'planner', name: 'One-step planner', text: 'Simulates the next generation for each of its nine moves from what the LIDAR saw, and picks the move with the most kills (direct plus indirect) minus the cells it would create.' },
+  { id: 'overcrowder', name: 'Overcrowder', text: 'Never aims to step on cells. Picks the move where its own presence as a neighbour would kill the most cells through overcrowding or undercrowding.' },
+  { id: 'greedy', name: 'Greedy eater', text: 'Steps onto any adjacent live cell it can see; otherwise heads for the nearest LIDAR hit.' },
+  { id: 'random', name: 'Random walker', text: 'Moves at random and ignores its LIDAR. A baseline.' },
+  { id: 'parked', name: 'Parked', text: 'Never moves. Shows what happens just from being a live cell in the way.' }
+];
+function HunterSim(cols, rows, opts) {
+  var W = cols, H = rows, N = W * H, self = this;
+  var a = new Uint8Array(N), b = new Uint8Array(N), sa = new Uint8Array(N), sb = new Uint8Array(N);
+  this.W = W; this.H = H; this.RAYS = 72; this.RANGE = opts.range || 24; this.ranges = new Float32Array(72); this.hitsXY = []; this.events = [];
+  this.world = opts.world || 'glider-rain'; this.strategy = opts.strategy || 'planner'; this.walker = null; this.visual = opts.visual !== false;
+  function idx(x, y) { x %= W; if (x < 0) x += W; y %= H; if (y < 0) y += H; return y * W + x; }
+  this.cells = function () { return a; };
+  var GL = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]], RP = [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]];
+  function stampBoth(shape, x, y, fx, fy) { shape.forEach(function (c) { var i = idx(x + (fx ? 2 - c[0] : c[0]), y + (fy ? 2 - c[1] : c[1])); a[i] = 1; sa[i] = 1; }); }
+  this.reset = function (seed) {
+    this.seed = seed == null ? (Math.random() * 1e9) | 0 : seed;
+    this.rng = mulberry32(this.seed); this.brain = mulberry32(this.seed ^ 0x9E3779B9);
+    a.fill(0); sa.fill(0); this.gen = 0; this.events = [];
+    this.bot = { x: (W * (opts.startX || 0.5)) | 0, y: (H * 0.5) | 0, px: 0, py: 0, hx: 1, hy: 0 };
+    this.stats = { direct: 0, indirect: 0, created: 0, gapSum: 0 };
+    if (this.world === 'soup') { for (var i = 0; i < N; i++) { var v = this.rng() < 0.2 ? 1 : 0; a[i] = v; sa[i] = v; } }
+    else for (var k = 0; k < Math.max(8, (N / 900) | 0); k++) this.spawn();
+    a[idx(this.bot.x, this.bot.y)] = 1;
+  };
+  this.spawn = function () { var r = this.rng, x = (r() * W) | 0, y = (r() * H) | 0; stampBoth(GL, x, y, r() < 0.5, r() < 0.5); };
+  this.drop = function (x, y) { stampBoth(RP, x - 1, y - 1, false, false); };
+  function lifeStep(src, dst) {
+    for (var y = 0; y < H; y++) { var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
+      for (var x = 0; x < W; x++) { var l = x === 0 ? W - 1 : x - 1, r = x === W - 1 ? 0 : x + 1;
+        var n = src[up + l] + src[up + x] + src[up + r] + src[md + l] + src[md + r] + src[dn + l] + src[dn + x] + src[dn + r];
+        dst[md + x] = (n === 3 || (n === 2 && src[md + x] === 1)) ? 1 : 0; } }
+  }
+  function rule(alive, n) { return n === 3 || (alive && n === 2) ? 1 : 0; }
+  // LIDAR scan into a belief window of radius 3 (1 seen live, 0 seen empty, -1 unseen)
+  var R2 = 3, BW = 7, belief = new Int8Array(49);
+  function bel(dx, dy) { return belief[(dy + R2) * BW + dx + R2]; }
+  this.scan = function () {
+    var bx = this.bot.x, by = this.bot.y; belief.fill(-1); belief[R2 * BW + R2] = 0; this.hitsXY = []; this.nearest = null;
+    for (var k = 0; k < 72; k++) { var th = k / 72 * Math.PI * 2, c = Math.cos(th), s = Math.sin(th), hit = this.RANGE, lx = 0, ly = 0;
+      for (var t = 0.5; t <= this.RANGE; t += 0.35) { var cx = Math.round(c * t), cy = Math.round(s * t);
+        if (cx === lx && cy === ly) continue; lx = cx; ly = cy;
+        var live = a[idx(bx + cx, by + cy)];
+        if (Math.abs(cx) <= R2 && Math.abs(cy) <= R2) { var bi = (cy + R2) * BW + cx + R2; if (belief[bi] !== 1) belief[bi] = live; }
+        if (live) { hit = t; this.hitsXY.push(bx + cx, by + cy); if (!this.nearest || t < this.nearest.t) this.nearest = { dx: cx, dy: cy, t: t }; break; } }
+      this.ranges[k] = hit; }
+  };
+  /* Predicted effect of moving to (mx,my) relative to the bot, from the belief window only (unseen = empty). */
+  function predict(mx, my) {
+    var direct = bel(mx, my) === 1 ? 1 : 0, kills = 0, made = 0;
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+      var cx = mx + i, cy = my + j; if (Math.abs(cx) > 2 || Math.abs(cy) > 2) continue;
+      var n = 0; for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) { if (!p && !q) continue;
+        var ux = cx + p, uy = cy + q; if (ux === 0 && uy === 0) continue;          // the bot's current cell will be vacated
+        if (ux === mx && uy === my) continue;                                      // handled as the rover below
+        if (Math.abs(ux) <= 3 && Math.abs(uy) <= 3 && bel(ux, uy) === 1) n++; }
+      var alive = (cx === 0 && cy === 0) ? 0 : (bel(cx, cy) === 1 ? 1 : 0);
+      var withR = rule(alive, n + 1), without = rule(alive, n + direct);
+      if (without && !withR) kills++; if (!without && withR) made++; }
+    return { direct: direct, kills: kills, made: made };
+  }
+  function toward(dx, dy) { return [Math.sign(dx), Math.sign(dy)]; }
+  this.decide = function () {
+    var S = this.strategy, B = this.bot, r = this.brain;
+    if (S === 'parked') return [0, 0];
+    if (S === 'random') return [((r() * 3) | 0) - 1, ((r() * 3) | 0) - 1];
+    var fallback;
+    if (this.nearest) fallback = toward(this.nearest.dx, this.nearest.dy);
+    else { if (r() < 0.03) { B.hx = ((r() * 3) | 0) - 1; B.hy = ((r() * 3) | 0) - 1; if (!B.hx && !B.hy) B.hx = 1; } fallback = [B.hx, B.hy]; }
+    if (S === 'greedy') {
+      for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) if ((i || j) && bel(i, j) === 1) return [i, j];
+      return fallback;
+    }
+    var best = null, bestS = 0;
+    for (var y = -1; y <= 1; y++) for (var x = -1; x <= 1; x++) {
+      var p = predict(x, y), sc = S === 'overcrowder' ? p.kills - (p.direct ? 0.5 : 0) : p.direct + p.kills - p.made;
+      sc += r() * 0.01;
+      if (sc > bestS + 0.02) { bestS = sc; best = [x, y]; } }
+    return best || fallback;
+  };
+  this.step = function () {
+    this.scan();
+    var m = this.decide(), B = this.bot, now = this.visual ? performance.now() : 0;
+    a[idx(B.x, B.y)] = 0;
+    var nx = ((B.x + m[0]) % W + W) % W, ny = ((B.y + m[1]) % H + H) % H, ti = idx(nx, ny), killed = a[ti];
+    if (killed) { this.stats.direct++; if (this.visual) this.events.push({ x: nx, y: ny, t: now, kind: 'direct' }); }
+    a[ti] = 1; B.x = nx; B.y = ny; B.px = m[0]; B.py = m[1];
+    // counterfactual for the eight neighbours: the rover's cell holds what was there before (killed ? 1 : 0)
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+      var cx = nx + i, cy = ny + j, n = 0;
+      for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) if (p || q) n += a[idx(cx + p, cy + q)];
+      var alive = a[idx(cx, cy)], withR = rule(alive, n), without = rule(alive, n - 1 + killed);
+      if (without && !withR) { this.stats.indirect++; if (this.visual) this.events.push({ x: ((cx % W) + W) % W, y: ((cy % H) + H) % H, t: now, kind: 'indirect' }); }
+      if (!without && withR) { this.stats.created++; if (this.visual) this.events.push({ x: ((cx % W) + W) % W, y: ((cy % H) + H) % H, t: now, kind: 'created' }); } }
+    lifeStep(a, b); var t = a; a = b; b = t; a[idx(B.x, B.y)] = 1;
+    lifeStep(sa, sb); t = sa; sa = sb; sb = t;
+    this.gen++;
+    if (this.world === 'glider-rain' && this.gen % 12 === 0) this.spawn();
+    var pa = 0, ps = 0; for (var z = 0; z < N; z++) { pa += a[z]; ps += sa[z]; }
+    this.pop = pa - 1; this.twinPop = ps; this.stats.gapSum += ps - (pa - 1);
+    if (this.events.length > 200) this.events.splice(0, this.events.length - 200);
+  };
+  this.per100 = function () { var g = Math.max(1, this.gen) / 100, s = this.stats;
+    return { direct: s.direct / g, indirect: s.indirect / g, created: s.created / g, gap: s.gapSum / Math.max(1, this.gen) }; };
+  this.reset(opts.seed);
+}
+/* Paired benchmark: every strategy sees the same worlds (same seeds, same glider schedule). */
+function huntBenchmark(world, opts, onProgress, onDone) {
+  var trials = opts.trials || 4, gens = opts.gens || 1000, cols = opts.cols || 120, rows = opts.rows || 80;
+  var jobs = []; HUNT_STRATEGIES.forEach(function (s) { for (var t = 0; t < trials; t++) jobs.push({ s: s.id, seed: 1000 + t }); });
+  var res = {}, j = 0, sim = null, cancelled = false, trace = null;
+  function tick() {
+    if (cancelled) return;
+    var t0 = Date.now();
+    while (Date.now() - t0 < 25) {
+      if (!sim) { if (j >= jobs.length) { onDone(res); return; } sim = new HunterSim(cols, rows, { world: world, strategy: jobs[j].s, seed: jobs[j].seed, visual: false }); trace = { direct: [], net: [], gap: [] }; }
+      sim.step();
+      if (sim.gen % 10 === 0) { trace.direct.push(sim.stats.direct); trace.net.push(sim.stats.indirect - sim.stats.created); trace.gap.push(sim.twinPop - sim.pop); }
+      if (sim.gen >= gens) { var r = res[jobs[j].s] || (res[jobs[j].s] = { direct: 0, indirect: 0, created: 0, gap: 0, n: 0 }), p = sim.per100();
+        r.direct += p.direct; r.indirect += p.indirect; r.created += p.created; r.gap += p.gap; r.n++; (r.traces || (r.traces = [])).push(trace); sim = null; j++; onProgress(j / jobs.length); }
+    }
+    setTimeout(tick, 0);
+  }
+  tick(); return function () { cancelled = true; };
+}
+
+/* ---------- Farm: rovers with an energy budget ----------
+   Moving costs energy, eating a live cell (stepping onto it) earns energy, and a rover whose energy
+   reaches the split threshold divides: a child appears in a free neighbouring cell and both counters
+   reset. Rovers are immortal live cells. A rover that can't afford a move can still step onto food,
+   because the meal pays for the step. "Farmed" cells are cells that were born (or kept alive) only
+   because a rover was next to them; eating one of those is farming. */
+var FARM_STRATEGIES = [
+  { id: 'farmer', name: 'Farmer', text: 'Scores each move by the energy it earns now plus the food it expects next to it next generation, counting the cells its own presence will create. Explores only when it can afford to.' },
+  { id: 'ambusher', name: 'Ambusher', text: 'Never pays to move. Waits until a live cell appears next to it, then eats it.' },
+  { id: 'greedy', name: 'Greedy eater', text: 'Eats any adjacent cell; otherwise pays to chase the nearest LIDAR hit.' },
+  { id: 'random', name: 'Random walker', text: 'Moves at random whenever it can afford to. A baseline.' }
+];
+var FARM_DEFAULTS = { moveCost: 1, foodReward: 10, idleCost: 0, startEnergy: 50, splitAt: 100, resetTo: 0, maxRovers: 40 };
+function FarmSim(cols, rows, o) {
+  var W = cols, H = rows, N = W * H, P = {};
+  for (var k in FARM_DEFAULTS) P[k] = o[k] != null ? o[k] : FARM_DEFAULTS[k];
+  this.P = P; this.W = W; this.H = H; this.world = o.world || 'soup'; this.strategy = o.strategy || 'farmer'; this.visual = o.visual !== false;
+  this.RAYS = 72; this.RANGE = o.range || 20;
+  var a = new Uint8Array(N), b = new Uint8Array(N), sa = new Uint8Array(N), sb = new Uint8Array(N);
+  var farmed = new Uint8Array(N), made = new Uint8Array(N), rmap = new Uint8Array(N);
+  function idx(x, y) { x %= W; if (x < 0) x += W; y %= H; if (y < 0) y += H; return y * W + x; }
+  this.idx = idx; this.cells = function () { return a; }; this.farmedFlags = function () { return farmed; };
+  var GL = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]], RP = [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]];
+  function stampBoth(shape, x, y, fx, fy) { shape.forEach(function (c) { var i = idx(x + (fx ? 2 - c[0] : c[0]), y + (fy ? 2 - c[1] : c[1])); if (!rmap[i]) { a[i] = 1; } sa[i] = 1; }); }
+  this.reset = function (seed) {
+    this.seed = seed == null ? (Math.random() * 1e9) | 0 : seed;
+    this.rng = mulberry32(this.seed); this.brain = mulberry32(this.seed ^ 0x9E3779B9);
+    a.fill(0); sa.fill(0); farmed.fill(0); rmap.fill(0); this.gen = 0; this.events = [];
+    this.stats = { eaten: 0, farmedEaten: 0, moves: 0, spent: 0, splits: 0 };
+    if (this.world === 'soup') { for (var i = 0; i < N; i++) { var v = this.rng() < 0.2 ? 1 : 0; a[i] = v; sa[i] = v; } }
+    else for (var q = 0; q < Math.max(8, (N / 900) | 0); q++) this.spawn();
+    var r0 = { x: (W * (o.startX || 0.5)) | 0, y: (H * 0.5) | 0, e: P.startEnergy, hx: 1, hy: 0, age: 0 };
+    this.rovers = [r0]; a[idx(r0.x, r0.y)] = 1; rmap[idx(r0.x, r0.y)] = 1;
+  };
+  this.spawn = function () { var r = this.rng, x = (r() * W) | 0, y = (r() * H) | 0; stampBoth(GL, x, y, r() < 0.5, r() < 0.5); };
+  this.drop = function (x, y) { stampBoth(RP, x - 1, y - 1, false, false); };
+  function rule(alive, n) { return n === 3 || (alive && n === 2) ? 1 : 0; }
+  function lifeStep(src, dst) {
+    for (var y = 0; y < H; y++) { var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
+      for (var x = 0; x < W; x++) { var l = x === 0 ? W - 1 : x - 1, r = x === W - 1 ? 0 : x + 1;
+        var n = src[up + l] + src[up + x] + src[up + r] + src[md + l] + src[md + r] + src[dn + l] + src[dn + x] + src[dn + r];
+        dst[md + x] = (n === 3 || (n === 2 && src[md + x] === 1)) ? 1 : 0; } }
+  }
+  /* LIDAR for one rover: belief window of radius 3 (1 food, 2 another rover, 0 seen empty, -1 unseen) */
+  var R2 = 3, BW = 7, belief = new Int8Array(49), self = this;
+  function bel(dx, dy) { return (Math.abs(dx) > R2 || Math.abs(dy) > R2) ? -1 : belief[(dy + R2) * BW + dx + R2]; }
+  // precompute each beam's cell sequence once: [dx, dy, distance, ...] per ray
+  var RAYCELLS = [];
+  for (var rk = 0; rk < 72; rk++) { var th0 = rk / 72 * Math.PI * 2, c0 = Math.cos(th0), s0 = Math.sin(th0), seq = [], plx = 0, ply = 0;
+    for (var t0 = 0.5; t0 <= this.RANGE; t0 += 0.35) { var qx = Math.round(c0 * t0), qy = Math.round(s0 * t0); if (qx === plx && qy === ply) continue; plx = qx; ply = qy; seq.push(qx, qy, t0); }
+    RAYCELLS.push(seq); }
+  this.scan = function (r, keep) {
+    belief.fill(-1); belief[R2 * BW + R2] = 0; var nearest = null; if (keep) { this.hitsXY = []; }
+    var rx = r.x, ry = r.y;
+    for (var k = 0; k < 72; k++) { var seq = RAYCELLS[k], hit = this.RANGE;
+      for (var q = 0; q < seq.length; q += 3) { var cx = seq[q], cy = seq[q + 1], X = rx + cx, Y = ry + cy;
+        if (X < 0) X += W; else if (X >= W) X -= W; if (Y < 0) Y += H; else if (Y >= H) Y -= H;
+        var i = Y * W + X, live = a[i], v = live ? (rmap[i] ? 2 : 1) : 0;
+        if (cx <= R2 && cx >= -R2 && cy <= R2 && cy >= -R2) { var bi = (cy + R2) * BW + cx + R2; if (belief[bi] < 1) belief[bi] = v; }
+        if (live) { hit = seq[q + 2]; if (keep) this.hitsXY.push(X, Y); if (v === 1 && (!nearest || hit < nearest.t)) nearest = { dx: cx, dy: cy, t: hit }; break; } }
+      if (keep) this.ranges[k] = hit; }
+    return nearest;
+  };
+  this.ranges = new Float32Array(72); this.hitsXY = [];
+  /* Food expected around (mx,my) next generation if the rover stands there (from the belief window). */
+  function foodNext(mx, my, moving) {
+    var nf = 0;
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+      var cx = mx + i, cy = my + j, cur = bel(cx, cy); if (cur === 2 || cur === -1) continue;
+      if (cx === 0 && cy === 0) continue;
+      var n = 0;
+      for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) { if (!p && !q) continue;
+        var ux = cx + p, uy = cy + q;
+        if (ux === mx && uy === my) { n++; continue; }                 // the rover itself
+        if (ux === 0 && uy === 0) { if (!moving) n++; continue; }      // the rover's current cell
+        var v = bel(ux, uy); if (v >= 1) n++; }
+      var alive = cur === 1 && !(cx === mx && cy === my) ? 1 : 0;
+      nf += rule(alive, n); }
+    return nf;
+  }
+  this.decide = function (r, nearest) {
+    var S = this.strategy, rnd = this.brain, cost = P.moveCost, R = P.foodReward;
+    function canMove(dx, dy) { var v = bel(dx, dy); if (v === 2) return false; return v === 1 ? r.e - cost + R >= 0 : r.e >= cost; }
+    var food = []; for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) if ((i || j) && bel(i, j) === 1) food.push([i, j]);
+    if (S === 'ambusher') return food.length ? food[(rnd() * food.length) | 0] : [0, 0];
+    if (S === 'random') { var m = [((rnd() * 3) | 0) - 1, ((rnd() * 3) | 0) - 1]; return canMove(m[0], m[1]) ? m : [0, 0]; }
+    var toward = null;
+    if (nearest) toward = [Math.sign(nearest.dx), Math.sign(nearest.dy)];
+    else { if (rnd() < 0.05) { r.hx = ((rnd() * 3) | 0) - 1; r.hy = ((rnd() * 3) | 0) - 1; } toward = [r.hx, r.hy]; }
+    if (S === 'greedy') { if (food.length) return food[(rnd() * food.length) | 0]; return (toward[0] || toward[1]) && canMove(toward[0], toward[1]) ? toward : [0, 0]; }
+    // farmer: energy now + expected food next generation
+    var best = [0, 0], bestS = -1e9;
+    for (var y = -1; y <= 1; y++) for (var x = -1; x <= 1; x++) {
+      var moving = !!(x || y); if (moving && !canMove(x, y)) continue;
+      var now = (bel(x, y) === 1 ? R : 0) - (moving ? cost : 0);
+      var nf = foodNext(x, y, moving), next = nf > 0 ? (R - cost) * 0.9 + Math.min(nf - 1, 3) * 0.3 : 0;
+      var sc = now + next + rnd() * 0.01;
+      if (sc > bestS) { bestS = sc; best = [x, y]; } }
+    // nothing to farm nearby: explore toward food, but only while there is energy to spare
+    if (bestS < 0.5 && r.e > 3 * cost + 5 && (toward[0] || toward[1]) && canMove(toward[0], toward[1])) return toward;
+    return best;
+  };
+  this.step = function () {
+    var rs = this.rovers, now = this.visual ? performance.now() : 0, st = this.stats, cost = P.moveCost;
+    made.fill(0);
+    // move rovers one at a time, in a shuffled order
+    var order = rs.map(function (_, i) { return i; });
+    for (var z = order.length - 1; z > 0; z--) { var w = (this.brain() * (z + 1)) | 0, t0 = order[z]; order[z] = order[w]; order[w] = t0; }
+    for (var oi = 0; oi < order.length; oi++) {
+      var r = rs[order[oi]], nearest = this.scan(r, oi === 0 && this.visual && r === rs[0]);
+      if (r === rs[0] && this.visual && oi !== 0) this.scan(r, true);
+      var m = this.decide(r, nearest), ate = 0;
+      if (m[0] || m[1]) {
+        var ti = idx(r.x + m[0], r.y + m[1]);
+        if (rmap[ti]) { m = [0, 0]; }
+        else {
+          a[idx(r.x, r.y)] = 0; rmap[idx(r.x, r.y)] = 0;
+          if (a[ti]) { ate = 1; st.eaten++; r.e += P.foodReward; if (farmed[ti]) st.farmedEaten++; if (this.visual) this.events.push({ x: ti % W, y: (ti / W) | 0, t: now, kind: farmed[ti] ? 'farmed' : 'direct' }); }
+          r.e -= cost; st.moves++; st.spent += cost;
+          r.x = ((r.x + m[0]) % W + W) % W; r.y = ((r.y + m[1]) % H + H) % H; a[ti] = 1; rmap[ti] = 1;
+        }
+      }
+      r.e = Math.max(0, r.e - P.idleCost); r.ate = ate;
+    }
+    // cells each rover's presence creates (counterfactual: that rover's cell holds what was there before it arrived)
+    for (var ri = 0; ri < rs.length; ri++) { var R0 = rs[ri];
+      for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+        var ci = idx(R0.x + i, R0.y + j); if (rmap[ci]) continue;
+        var n = 0; for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) if (p || q) n += a[idx(R0.x + i + p, R0.y + j + q)];
+        if (!rule(a[ci], n - 1 + R0.ate) && rule(a[ci], n)) made[ci] = 1; } }
+    lifeStep(a, b);
+    for (var c = 0; c < N; c++) { if (rmap[c]) { b[c] = 1; farmed[c] = 0; } else farmed[c] = b[c] && (made[c] || (farmed[c] && a[c])) ? 1 : 0; }
+    var tt = a; a = b; b = tt;
+    lifeStep(sa, sb); tt = sa; sa = sb; sb = tt;
+    this.gen++;
+    if (this.world === 'glider-rain' && this.gen % 12 === 0) this.spawn();
+    // reproduction
+    for (var k2 = 0, L = rs.length; k2 < L; k2++) { var pr = rs[k2];
+      if (pr.e < P.splitAt) continue;
+      if (rs.length >= P.maxRovers) { pr.e = P.splitAt; continue; }
+      var spots = []; for (var j2 = -1; j2 <= 1; j2++) for (var i2 = -1; i2 <= 1; i2++) { if (!i2 && !j2) continue; var si = idx(pr.x + i2, pr.y + j2); if (!a[si]) spots.push([i2, j2]); }
+      if (!spots.length) continue;
+      var sp = spots[(this.brain() * spots.length) | 0], cx2 = ((pr.x + sp[0]) % W + W) % W, cy2 = ((pr.y + sp[1]) % H + H) % H, ci2 = cy2 * W + cx2;
+      rs.push({ x: cx2, y: cy2, e: P.resetTo, hx: sp[0] || 1, hy: sp[1], age: 0 }); a[ci2] = 1; rmap[ci2] = 1; pr.e = P.resetTo; st.splits++;
+      if (rs.length >= P.maxRovers && st.fullAt == null) st.fullAt = this.gen;
+      if (this.visual) this.events.push({ x: cx2, y: cy2, t: now, kind: 'split' }); }
+    if (this.visual) { var pa = 0, ps = 0; for (var z2 = 0; z2 < N; z2++) { pa += a[z2]; ps += sa[z2]; } this.pop = pa - rs.length; this.twinPop = ps; }
+    if (this.events.length > 300) this.events.splice(0, this.events.length - 300);
+  };
+  this.summary = function () { var g = Math.max(1, this.gen) / 100, s = this.stats, e = 0; this.rovers.forEach(function (r) { e += r.e; });
+    return { eaten: s.eaten / g, farmedShare: s.eaten ? s.farmedEaten / s.eaten : 0, moves: s.moves / g, splits: s.splits, rovers: this.rovers.length, energy: e / this.rovers.length,
+             perMove: s.moves ? s.eaten / s.moves : 0, fullAt: s.fullAt == null ? null : s.fullAt }; };
+  this.reset(o.seed);
+}
+function farmBenchmark(world, params, opts, onProgress, onDone) {
+  var trials = opts.trials || 4, gens = opts.gens || 1000, jobs = [];
+  FARM_STRATEGIES.forEach(function (s) { for (var t = 0; t < trials; t++) jobs.push({ s: s.id, seed: 2000 + t }); });
+  var res = {}, j = 0, sim = null, cancelled = false, trace = null;
+  function tick() {
+    if (cancelled) return; var t0 = Date.now();
+    while (Date.now() - t0 < 25) {
+      if (!sim) { if (j >= jobs.length) { onDone(res); return; }
+        var o = { world: world, strategy: jobs[j].s, seed: jobs[j].seed, visual: false }; for (var k in params) o[k] = params[k];
+        sim = new FarmSim(opts.cols || 120, opts.rows || 80, o); trace = { rovers: [], eaten: [], farmed: [] }; }
+      sim.step();
+      if (sim.gen % 10 === 0) { var st2 = sim.stats; trace.rovers.push(sim.rovers.length); trace.eaten.push(st2.eaten); trace.farmed.push(st2.eaten ? 100 * st2.farmedEaten / st2.eaten : 0); }
+      if (sim.gen >= gens) { var r = res[jobs[j].s] || (res[jobs[j].s] = { eaten: 0, farmedShare: 0, moves: 0, splits: 0, rovers: 0, perMove: 0, n: 0, full: [] }), p = sim.summary();
+        for (var key in r) if (key !== 'n' && key !== 'full' && key !== 'traces') r[key] += p[key]; r.full.push(p.fullAt); r.n++; (r.traces || (r.traces = [])).push(trace); sim = null; j++; onProgress(j / jobs.length); }
+    }
+    setTimeout(tick, 0);
+  }
+  tick(); return function () { cancelled = true; };
+}
+/* drawing: wild cells green, farmed cells blue, rovers white (dimmer when broke) */
+function farmBuffers(sim) {
+  var off = document.createElement('canvas'); off.width = sim.W; off.height = sim.H;
+  var offCtx = off.getContext('2d'), img = offCtx.createImageData(sim.W, sim.H), LEb = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+  function lutFor(C) { var L = new Uint32Array(32), B = [38, 38, 36];
+    for (var l = 0; l < 32; l++) { var al = l === 31 ? 0.78 : Math.pow(l / 31, 2) * 0.2;
+      var r = Math.round(B[0] + (C[0] - B[0]) * al), g = Math.round(B[1] + (C[1] - B[1]) * al), bb = Math.round(B[2] + (C[2] - B[2]) * al);
+      L[l] = LEb ? (255 << 24 | bb << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | bb << 8 | 255) >>> 0; } return L; }
+  return { off: off, offCtx: offCtx, img: img, px: new Uint32Array(img.data.buffer), trail: new Uint8Array(sim.W * sim.H), kind: new Uint8Array(sim.W * sim.H),
+           luts: [lutFor([111, 181, 125]), lutFor([116, 163, 227])] };
+}
+function drawFarm(sim, ctx, B, s) {
+  var W = sim.W, H = sim.H, cells = sim.cells(), fl = sim.farmedFlags(), px = B.px, tr = B.trail, kd = B.kind;
+  for (var i = 0; i < W * H; i++) { if (cells[i]) { tr[i] = 31; kd[i] = fl[i]; } else if (tr[i]) tr[i]--; px[i] = B.luts[kd[i]][tr[i]]; }
+  B.offCtx.putImageData(B.img, 0, 0);
+  ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, W * s, H * s); ctx.drawImage(B.off, 0, 0, W * s, H * s);
+  var r0 = sim.rovers[0];
+  if (r0) { var bx = (r0.x + 0.5) * s, by = (r0.y + 0.5) * s; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(116,163,227,0.13)'; ctx.beginPath();
+    for (var k = 0; k < 72; k++) { var th = k / 72 * Math.PI * 2, r = sim.ranges[k] * s; ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(th) * r, by + Math.sin(th) * r); }
+    ctx.stroke(); ctx.fillStyle = '#e6b85c'; for (var h = 0; h < sim.hitsXY.length; h += 2) ctx.fillRect(sim.hitsXY[h] * s, sim.hitsXY[h + 1] * s, s, s); }
+  sim.rovers.forEach(function (r) { var e = Math.min(1, r.e / sim.P.splitAt);
+    ctx.fillStyle = 'rgba(247,245,238,' + (0.45 + 0.55 * e).toFixed(2) + ')'; ctx.fillRect(r.x * s - 1, r.y * s - 1, s + 2, s + 2); });
+  var now = performance.now();
+  sim.events = sim.events.filter(function (e) { var q = (now - e.t) / (e.kind === 'split' ? 1100 : 700); if (q > 1) return false;
+    ctx.strokeStyle = e.kind === 'split' ? 'rgba(247,245,238,' + (1 - q) + ')' : e.kind === 'farmed' ? 'rgba(116,163,227,' + (1 - q) + ')' : 'rgba(224,104,95,' + (1 - q) + ')';
+    ctx.beginPath(); ctx.arc((e.x + 0.5) * s, (e.y + 0.5) * s, s * 0.8 + q * s * (e.kind === 'split' ? 7 : 3), 0, Math.PI * 2); ctx.stroke(); return true; });
+}
+function farmStatsText(sim) { var p = sim.summary();
+  return 'Generation ' + sim.gen.toLocaleString() + '. ' + p.rovers + ' rover' + (p.rovers === 1 ? '' : 's') + (p.rovers >= sim.P.maxRovers ? ' (colony full)' : '') +
+    ', ' + p.eaten.toFixed(0) + ' cells eaten per 100 generations, ' + Math.round(p.farmedShare * 100) + '% of them farmed, ' + p.perMove.toFixed(2) + ' meals per move.'; }
+var FARM_LEGEND = [{ color: '#f7f5ee', label: 'Rover (dimmer when low on energy)' }, { color: '#6fb57d', label: 'Wild cells' }, { color: '#74a3e3', label: 'Farmed cells (made by a rover)' }, { color: '#e0685f', label: 'Wild meal' }, { color: '#e6b85c', label: 'LIDAR hits (first rover)' }];
+
+/* ---------- LIDAR rover in the Game of Life (shared by the background effect and the figure) ---------- */
+function RoverSim(cols, rows, opts) {
+  opts = opts || {};
+  var W = cols, H = rows, N = W * H, self = this;
+  var a = new Uint8Array(N), b = new Uint8Array(N);
+  this.W = W; this.H = H; this.gen = 0; this.mode = opts.mode || 'glider-rain';
+  this.RAYS = opts.rays || 72; this.RANGE = opts.range || 26; this.PRIOR = 0.25;
+  this.ranges = new Float32Array(this.RAYS); this.hitsXY = [];
+  this.bot = { x: W >> 1, y: H >> 1, hits: 0, streak: 0, best: 0, px: 0, py: 0 };
+  this.walker = { x: (W >> 1) + 9, y: (H >> 1) - 5, hits: 0 };
+  this.events = [];
+  function idx(x, y) { x %= W; if (x < 0) x += W; y %= H; if (y < 0) y += H; return y * W + x; }
+  this.idx = idx; this.cells = function () { return a; };
+  var GL = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]], RP = [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]];
+  function stamp(shape, x, y, fx, fy) { shape.forEach(function (c) { a[idx(x + (fx ? 2 - c[0] : c[0]), y + (fy ? 2 - c[1] : c[1]))] = 1; }); }
+  function farFromBot(x, y, d) { var dx = Math.abs(x - self.bot.x), dy = Math.abs(y - self.bot.y); dx = Math.min(dx, W - dx); dy = Math.min(dy, H - dy); return Math.max(dx, dy) > d; }
+  this.population = function () { var n = 0; for (var i = 0; i < N; i++) n += a[i]; return n; };
+  this.spawnGlider = function () {
+    for (var tries = 0; tries < 20; tries++) { var x = (Math.random() * W) | 0, y = (Math.random() * H) | 0;
+      if (farFromBot(x, y, 14)) { stamp(GL, x, y, Math.random() < 0.5, Math.random() < 0.5); return; } }
+  };
+  this.drop = function (x, y) { stamp(Math.random() < 0.6 ? RP : GL, x - 1, y - 1, Math.random() < 0.5, Math.random() < 0.5); };
+  this.reset = function () {
+    a.fill(0); this.gen = 0; this.bot.hits = this.bot.streak = this.bot.best = 0; this.walker.hits = 0; this.events = [];
+    if (this.mode === 'soup') { for (var i = 0; i < N; i++) a[i] = Math.random() < 0.18 ? 1 : 0;
+      for (var y = -6; y <= 6; y++) for (var x = -6; x <= 6; x++) a[idx(this.bot.x + x, this.bot.y + y)] = 0; }
+    else { var g = Math.max(8, (N / 900) | 0); for (var k = 0; k < g; k++) this.spawnGlider(); }
+  };
+  function life() {
+    for (var y = 0; y < H; y++) {
+      var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
+      for (var x = 0; x < W; x++) {
+        var l = x === 0 ? W - 1 : x - 1, r = x === W - 1 ? 0 : x + 1;
+        var n = a[up + l] + a[up + x] + a[up + r] + a[md + l] + a[md + r] + a[dn + l] + a[dn + x] + a[dn + r];
+        b[md + x] = (n === 3 || (n === 2 && a[md + x])) ? 1 : 0;
+      }
+    }
+    var t = a; a = b; b = t;
+  }
+  /* 2D LIDAR: march each ray until it meets a live cell. Returns a belief window around the bot:
+     1 = seen occupied, 0 = seen free, -1 = not seen (hidden behind a hit or out of range). */
+  var R2 = 3, BW = 2 * R2 + 1, belief = new Int8Array(BW * BW);
+  this.scan = function () {
+    var bx = this.bot.x, by = this.bot.y, RAYS = this.RAYS, RANGE = this.RANGE;
+    belief.fill(-1); belief[R2 * BW + R2] = a[idx(bx, by)] ? 1 : 0; this.hitsXY = [];
+    for (var k = 0; k < RAYS; k++) {
+      var th = (k / RAYS) * Math.PI * 2, c = Math.cos(th), s = Math.sin(th), hit = RANGE, lx = 0, ly = 0;
+      for (var t = 0.5; t <= RANGE; t += 0.35) {
+        var cx = Math.round(c * t), cy = Math.round(s * t);
+        if (cx === lx && cy === ly) continue; lx = cx; ly = cy;
+        var live = a[idx(bx + cx, by + cy)];
+        if (Math.abs(cx) <= R2 && Math.abs(cy) <= R2) { var bi = (cy + R2) * BW + cx + R2; if (belief[bi] !== 1) belief[bi] = live ? 1 : 0; }
+        if (live) { hit = t; this.hitsXY.push(bx + cx, by + cy); break; }
+      }
+      this.ranges[k] = hit;
+    }
+  };
+  function binom(n, k, p) { var c = 1; for (var i = 0; i < k; i++) c = c * (n - i) / (i + 1); return c * Math.pow(p, k) * Math.pow(1 - p, n - k); }
+  /* Chance that cell (dx,dy) next to the bot is alive next generation, given what the scan saw.
+     Unseen neighbours are treated as alive with probability PRIOR. */
+  this.pAlive = function (dx, dy) {
+    var known = 0, unknown = 0, selfState = belief[(dy + R2) * BW + dx + R2];
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+      var v = belief[(dy + j + R2) * BW + dx + i + R2]; if (v === 1) known++; else if (v === -1) unknown++; }
+    var p = this.PRIOR, P2 = 0, P3 = 0;
+    for (var u = 0; u <= unknown; u++) { var n = known + u, pr = binom(unknown, u, p); if (n === 2) P2 += pr; if (n === 3) P3 += pr; }
+    var sAlive = selfState === 1 ? 1 : selfState === 0 ? 0 : p;
+    return sAlive * (P2 + P3) + (1 - sAlive) * P3;
+  };
+  /* Score all nine moves: the one-step collision chance dominates, then clearance in that direction
+     (nearest hit within a 60-degree sector) and open space (mean free range) break ties. */
+  this.decide = function () {
+    var best = null, RAYS = this.RAYS, RANGE = this.RANGE, scores = [];
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var p1 = this.pAlive(dx, dy), near = RANGE, free = 0, cnt = 0;
+      if (dx || dy) {
+        var dir = Math.atan2(dy, dx);
+        for (var k = 0; k < RAYS; k++) { var th = (k / RAYS) * Math.PI * 2, dd = Math.abs(Math.atan2(Math.sin(th - dir), Math.cos(th - dir)));
+          if (dd < Math.PI / 6) { near = Math.min(near, this.ranges[k]); free += this.ranges[k]; cnt++; } }
+      } else { for (var k2 = 0; k2 < RAYS; k2++) { near = Math.min(near, this.ranges[k2]); free += this.ranges[k2]; cnt++; } }
+      var risk = 10 * p1 + 1.2 * Math.exp(-near / 4) + 0.6 * (1 - free / cnt / RANGE)
+        + ((dx === -this.bot.px && dy === -this.bot.py && (dx || dy)) ? 0.08 : 0) + Math.random() * 0.02;
+      scores.push({ dx: dx, dy: dy, p: p1, risk: risk });
+      if (!best || risk < best.risk) best = scores[scores.length - 1];
+    }
+    this.scores = scores; return best;
+  };
+  this.step = function () {
+    this.scan();
+    var m = this.decide();
+    // baseline: a walker that moves at random, blind
+    var wx = ((Math.random() * 3) | 0) - 1, wy = ((Math.random() * 3) | 0) - 1;
+    life(); this.gen++;
+    this.bot.x = ((this.bot.x + m.dx) % W + W) % W; this.bot.y = ((this.bot.y + m.dy) % H + H) % H; this.bot.px = m.dx; this.bot.py = m.dy;
+    this.walker.x = ((this.walker.x + wx) % W + W) % W; this.walker.y = ((this.walker.y + wy) % H + H) % H;
+    this.lastP = m.p;
+    if (a[idx(this.bot.x, this.bot.y)]) { this.bot.hits++; this.bot.streak = 0; this.events.push({ x: this.bot.x, y: this.bot.y, t: performance.now(), who: 'bot' }); }
+    else { this.bot.streak++; if (this.bot.streak > this.bot.best) this.bot.best = this.bot.streak; }
+    if (a[idx(this.walker.x, this.walker.y)]) { this.walker.hits++; this.events.push({ x: this.walker.x, y: this.walker.y, t: performance.now(), who: 'walker' }); }
+    // keep the world busy: add gliders when it thins out, never right next to the rover
+    var pop = this.population();
+    if (this.mode === 'glider-rain' && pop < N * 0.05 && this.gen % 6 === 0) this.spawnGlider();
+    if (this.mode === 'soup' && pop < N * 0.02 && this.gen % 20 === 0) for (var q = 0; q < 6; q++) { this.spawnGlider(); }
+  };
+  this.reset();
+}
+/* Draw a RoverSim into a canvas of cols*s by rows*s CSS px. */
+function drawRover(sim, ctx, off, offCtx, s, opts) {
+  var W = sim.W, H = sim.H, cells = sim.cells(), img = opts.img, px = opts.px, lut = opts.lut;
+  for (var i = 0; i < W * H; i++) { var t = opts.trail[i]; t = cells[i] ? 31 : (t > 0 ? t - 1 : 0); opts.trail[i] = t; px[i] = lut[t]; }
+  offCtx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, W * s, H * s); ctx.drawImage(off, 0, 0, W * s, H * s);
+  var bx = (sim.bot.x + 0.5) * s, by = (sim.bot.y + 0.5) * s;
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(116,163,227,0.16)'; ctx.beginPath();
+  for (var k = 0; k < sim.RAYS; k++) { var th = (k / sim.RAYS) * Math.PI * 2, r = sim.ranges[k] * s; ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(th) * r, by + Math.sin(th) * r); }
+  ctx.stroke();
+  ctx.fillStyle = '#e6b85c';
+  for (var h = 0; h < sim.hitsXY.length; h += 2) ctx.fillRect(sim.hitsXY[h] * s, sim.hitsXY[h + 1] * s, s, s);
+  if (sim.walker) { ctx.fillStyle = 'rgba(177,175,164,0.55)'; ctx.fillRect(sim.walker.x * s, sim.walker.y * s, s, s); }
+  ctx.fillStyle = '#f7f5ee'; ctx.fillRect(sim.bot.x * s - 1, sim.bot.y * s - 1, s + 2, s + 2);
+  var now = performance.now();
+  sim.events = sim.events.filter(function (e) { var q = (now - e.t) / 800; if (q > 1) return false;
+    ctx.strokeStyle = e.kind === 'direct' ? 'rgba(224,104,95,' + (1 - q) + ')' : e.kind === 'indirect' ? 'rgba(230,184,92,' + (0.9 * (1 - q)) + ')' : e.kind === 'created' ? 'rgba(116,163,227,' + (0.8 * (1 - q)) + ')' : e.who === 'bot' ? 'rgba(224,104,95,' + (1 - q) + ')' : 'rgba(177,175,164,' + (0.6 * (1 - q)) + ')';
+    ctx.beginPath(); ctx.arc((e.x + 0.5) * s, (e.y + 0.5) * s, s + q * s * 5, 0, Math.PI * 2); ctx.stroke(); return true; });
+}
+function roverBuffers(sim) {
+  var off = document.createElement('canvas'); off.width = sim.W; off.height = sim.H;
+  var offCtx = off.getContext('2d'), img = offCtx.createImageData(sim.W, sim.H);
+  var LEb = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1, lut = new Uint32Array(32), BGc = [38, 38, 36], G = [111, 181, 125];
+  for (var l = 0; l < 32; l++) { var al = l === 31 ? 0.75 : Math.pow(l / 31, 2) * 0.22;
+    var r = Math.round(BGc[0] + (G[0] - BGc[0]) * al), g = Math.round(BGc[1] + (G[1] - BGc[1]) * al), bb = Math.round(BGc[2] + (G[2] - BGc[2]) * al);
+    lut[l] = LEb ? (255 << 24 | bb << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | bb << 8 | 255) >>> 0; }
+  return { off: off, offCtx: offCtx, o: { img: img, px: new Uint32Array(img.data.buffer), lut: lut, trail: new Uint8Array(sim.W * sim.H) } };
+}
+function roverLegend() {
+  return [{ color: '#f7f5ee', label: 'Rover' }, { color: '#74a3e3', label: 'LIDAR beams' }, { color: '#e6b85c', label: 'Beam hits' },
+          { color: '#6fb57d', label: 'Live cells' }, { color: '#b1afa4', label: 'Blind random walker' }];
+}
+function roverStats(sim) {
+  var rate = function (h) { return sim.gen ? (1000 * h / sim.gen).toFixed(1) : '0.0'; };
+  return 'Generation ' + sim.gen.toLocaleString() + '. Rover: ' + sim.bot.hits + ' collisions (' + rate(sim.bot.hits) + ' per 1,000 generations), longest clean run ' + sim.bot.best + '. Blind walker: ' + sim.walker.hits + ' (' + rate(sim.walker.hits) + ' per 1,000).';
+}
+
+Backdrop.register('rover', {
+  label: 'LIDAR rover in Life',
+  options: function () { return [{ value: 'glider-rain', label: 'Rover dodging gliders' }, { value: 'soup', label: 'Rover in random soup' }]
+    .concat(HUNT_STRATEGIES.map(function (st) { return { value: 'hunt-' + st.id, label: 'Rover hunting cells: ' + st.name }; }))
+    .concat(FARM_STRATEGIES.map(function (st) { return { value: 'farm-' + st.id, label: 'Rover colony: ' + st.name }; })); },
+  create: function (host, spec) {
+    var canvas = host.canvas, ctx = host.ctx, raf = 0, paused = host.isPaused(), acc = 0, last = 0, capT = 0, sim, s, buf, variant = spec.variant || 'glider-rain';
+    function hunting() { return /^hunt-/.test(variant); }
+    function farming() { return /^farm-/.test(variant); }
+    function draw() { if (farming()) drawFarm(sim, ctx, buf, s); else drawRover(sim, ctx, buf.off, buf.offCtx, s, buf.o); }
+    function setup() {
+      var w = window.innerWidth, h = window.innerHeight; s = Math.max(4, Math.round(Math.min(w, h) / 150));
+      var cols = Math.ceil(w / s), rows = Math.ceil(h / s), range = Math.round(Math.min(cols, rows) * 0.3);
+      canvas.width = cols * s; canvas.height = rows * s; canvas.style.width = cols * s + 'px'; canvas.style.height = rows * s + 'px';
+      if (farming()) sim = new FarmSim(cols, rows, { world: 'soup', strategy: variant.slice(5), range: 20, startX: h > w ? 0.5 : 0.72 });
+      else if (hunting()) sim = new HunterSim(cols, rows, { world: 'glider-rain', strategy: variant.slice(5), range: Math.min(24, range), startX: h > w ? 0.5 : 0.72 });
+      else { sim = new RoverSim(cols, rows, { mode: variant === 'soup' ? 'soup' : 'glider-rain', range: range });
+        sim.bot.x = Math.round(cols * (h > w ? 0.5 : 0.72)); sim.bot.y = Math.round(rows * 0.5); sim.reset(); }
+      if (farming()) buf = farmBuffers(sim); else { buf = roverBuffers(sim); sim.scan(); }
+      draw(); host.reveal(); caption();
+    }
+    function caption() {
+      if (farming()) {
+        var fs = FARM_STRATEGIES.filter(function (x) { return 'farm-' + x.id === variant; })[0] || FARM_STRATEGIES[0];
+        host.caption({ title: 'LIDAR rover colony: ' + fs.name, credit: 'click the background to drop in more food',
+          text: 'Moving costs ' + sim.P.moveCost + ' energy and eating a cell earns ' + sim.P.foodReward + '. At ' + sim.P.splitAt + ' energy a rover splits in two and both counters reset to zero. Rovers are immortal live cells, so they also make cells grow around them that they can then eat: that\u2019s farming. ' + fs.text + ' ' + farmStatsText(sim),
+          legend: FARM_LEGEND, actions: [{ id: 'reset', label: 'Reset the world' }] });
+        return;
+      }
+      if (hunting()) {
+        var st = HUNT_STRATEGIES.filter(function (x) { return 'hunt-' + x.id === variant; })[0] || HUNT_STRATEGIES[0], p = sim.per100();
+        host.caption({ title: 'LIDAR rover hunting cells: ' + st.name, credit: 'click the background to feed it an R-pentomino',
+          text: 'The rover is now an immortal live cell that tries to destroy other cells. ' + st.text + ' Generation ' + sim.gen.toLocaleString() + ', per 100 generations: ' +
+            p.direct.toFixed(1) + ' direct kills, ' + p.indirect.toFixed(1) + ' indirect kills, ' + p.created.toFixed(1) + ' cells created by its presence.',
+          legend: [{ color: '#f7f5ee', label: 'Rover' }, { color: '#e0685f', label: 'Direct kill' }, { color: '#e6b85c', label: 'Indirect kill' }, { color: '#74a3e3', label: 'Cell it created' }, { color: '#6fb57d', label: 'Live cells' }],
+          actions: [{ id: 'reset', label: 'Reset the world' }] });
+        return;
+      }
+      host.caption({ title: variant === 'soup' ? 'LIDAR rover in random soup' : 'LIDAR rover dodging gliders', credit: 'click the background to throw an R-pentomino at it',
+        text: 'A single cell with a 72-beam 2D LIDAR lives inside Conway\u2019s Game of Life. Every generation it scans, estimates the chance that each of its nine possible moves lands on a live cell, and takes the safest one. It never sees the grid directly, only what its beams hit. ' + roverStats(sim),
+        legend: roverLegend(), actions: [{ id: 'reset', label: 'Reset the world' }] });
+    }
+    function frame(t) {
+      raf = requestAnimationFrame(frame);
+      var dt = Math.min(0.1, (t - last) / 1000 || 0); last = t;
+      if (!paused) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) sim.step(); }
+      draw();
+      if (t - capT > 1000) { capT = t; caption(); }
+    }
+    setup(); raf = requestAnimationFrame(frame);
+    return {
+      update: function (sp) { var v2 = sp.variant || 'glider-rain'; if (v2 !== variant) { variant = v2; setup(); } },
+      pointer: function (x, y) { sim.drop(Math.floor(x / s), Math.floor(y / s)); return true; },
+      setPaused: function (p) { paused = p; last = performance.now(); },
+      action: function (id) { if (id === 'reset') { sim.reset(); caption(); } },
+      resize: function () { setup(); },
+      destroy: function () { cancelAnimationFrame(raf); host.hide(); }
+    };
+  }
+});
+
+/* ---------- small charts for benchmark results (canvas, site colours, hover readout) ---------- */
+var STRAT_COLORS = { planner: '#e6b85c', farmer: '#e6b85c', overcrowder: '#74a3e3', ambusher: '#74a3e3', greedy: '#e0685f', random: '#b1afa4', parked: '#c58fd6' };
+function aggregate(traces, key) { // mean / min / max across seeds at each sample
+  var n = traces[0][key].length, mean = [], lo = [], hi = [];
+  for (var i = 0; i < n; i++) { var s = 0, mn = Infinity, mx = -Infinity;
+    traces.forEach(function (t) { var v = t[key][i]; s += v; if (v < mn) mn = v; if (v > mx) mx = v; });
+    mean.push(s / traces.length); lo.push(mn); hi.push(mx); }
+  return { mean: mean, lo: lo, hi: hi };
+}
+function chartBox(parent, title, note) {
+  var box = document.createElement('div'); box.className = 'chart';
+  box.innerHTML = '<p class="chart-title">' + esc(title) + '</p>' + (note ? '<p class="chart-note">' + esc(note) + '</p>' : '');
+  var holder = document.createElement('div'); holder.className = 'chart-canvas'; var cv = document.createElement('canvas'); holder.appendChild(cv); box.appendChild(holder);
+  var read = document.createElement('p'); read.className = 'chart-read'; read.setAttribute('aria-live', 'off'); box.appendChild(read);
+  parent.appendChild(box); return { box: box, holder: holder, cv: cv, read: read };
+}
+function niceScale(lo, hi) { // nice gridline step covering [lo, hi], always including 0
+  lo = Math.min(0, lo); hi = Math.max(0, hi); if (hi - lo < 1e-9) hi = lo + 1;
+  var raw = (hi - lo) / 5, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  var step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  var b = Math.floor(lo / step + 1e-9) * step, t = Math.ceil(hi / step - 1e-9) * step, ticks = [];
+  for (var v = b; v <= t + step / 2; v += step) ticks.push(Math.abs(v) < step / 1e6 ? 0 : v);
+  return { bottom: b, top: t, ticks: ticks };
+}
+function niceMax(v) { if (v <= 0) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function fmtNum(v) { if (v === 0) return '0'; var a = Math.abs(v); return a >= 1000 ? Math.round(v).toLocaleString() : a >= 10 ? v.toFixed(0) : a >= 1 ? v.toFixed(1) : v.toFixed(2); }
+/* series: [{name, color, mean, lo, hi}], xStep: generations between samples */
+function lineChart(parent, title, note, series, xStep, unit) {
+  var B = chartBox(parent, title, note), cv = B.cv, ctx = cv.getContext('2d'), hover = -1;
+  var n = series[0].mean.length, lo = Infinity, hi = -Infinity;
+  series.forEach(function (s) { for (var i = 0; i < n; i++) { lo = Math.min(lo, s.lo[i]); hi = Math.max(hi, s.hi[i]); } });
+  var sc = niceScale(lo, hi), top = sc.top, bottom = sc.bottom;
+  function draw() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = B.holder.clientWidth, h = Math.round(Math.min(240, Math.max(170, w * 0.55)));
+    cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + 'px'; cv.style.height = h + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var L = 46, R = 16, T = 8, Bm = 24, pw = w - L - R, ph = h - T - Bm, font = '11px ' + getComputedStyle(document.body).getPropertyValue('--sans');
+    var X = function (i) { return L + pw * (i + 1) / n; }, Y = function (v) { return T + ph * (top - v) / (top - bottom || 1); };
+    ctx.clearRect(0, 0, w, h); ctx.font = font; ctx.fillStyle = '#85837a'; ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.lineWidth = 1;
+    sc.ticks.forEach(function (v) { var y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke(); ctx.textAlign = 'right'; ctx.fillText(fmtNum(v), L - 6, y + 4); });
+    if (bottom < 0) { ctx.strokeStyle = 'rgba(177,175,164,0.4)'; ctx.beginPath(); ctx.moveTo(L, Math.round(Y(0)) + 0.5); ctx.lineTo(w - R, Math.round(Y(0)) + 0.5); ctx.stroke(); }
+    [0, 0.25, 0.5, 0.75, 1].forEach(function (f) { ctx.textAlign = f === 0 ? 'left' : f === 1 ? 'right' : 'center'; ctx.fillText(Math.round(f * n * xStep).toLocaleString(), L + pw * f, h - 6); });
+    series.forEach(function (s) { ctx.fillStyle = s.color + '22'; ctx.beginPath(); ctx.moveTo(X(0), Y(s.hi[0]));
+      for (var i = 1; i < n; i++) ctx.lineTo(X(i), Y(s.hi[i])); for (var k = n - 1; k >= 0; k--) ctx.lineTo(X(k), Y(s.lo[k])); ctx.fill(); });
+    series.forEach(function (s) { ctx.strokeStyle = s.color; ctx.lineWidth = 1.75; ctx.beginPath(); for (var i = 0; i < n; i++) { if (i) ctx.lineTo(X(i), Y(s.mean[i])); else ctx.moveTo(X(i), Y(s.mean[i])); } ctx.stroke(); });
+    if (hover >= 0) { ctx.strokeStyle = 'rgba(240,238,230,0.35)'; ctx.beginPath(); ctx.moveTo(Math.round(X(hover)) + 0.5, T); ctx.lineTo(Math.round(X(hover)) + 0.5, T + ph); ctx.stroke();
+      series.forEach(function (s) { ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(X(hover), Y(s.mean[hover]), 3, 0, Math.PI * 2); ctx.fill(); }); }
+    B.read.innerHTML = hover < 0 ? '<span class="chart-hint">Hover or tap for values. Lines are the average across seeds; shaded bands span the lowest to highest seed.</span>'
+      : 'Generation ' + ((hover + 1) * xStep).toLocaleString() + ': ' + series.map(function (s) { return '<span><i style="background:' + s.color + '"></i>' + esc(s.name) + ' ' + fmtNum(s.mean[hover]) + (unit || '') + '</span>'; }).join(' ');
+    B.pos = function (px) { return Math.max(0, Math.min(n - 1, Math.round((px - L) / pw * n) - 1)); };
+  }
+  function move(ev) { var r = cv.getBoundingClientRect(); hover = B.pos(ev.clientX - r.left); draw(); }
+  cv.addEventListener('pointermove', move); cv.addEventListener('pointerdown', move); cv.addEventListener('pointerleave', function () { hover = -1; draw(); });
+  cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', title + '. Final averages: ' + series.map(function (s) { return s.name + ' ' + fmtNum(s.mean[n - 1]) + (unit || ''); }).join(', ') + '.');
+  draw(); return draw;
+}
+/* grouped horizontal bars: rows = strategies, groups = metrics [{name, color, values:[...]}] */
+function barChart(parent, title, note, rowNames, metrics) {
+  var B = chartBox(parent, title, note), cv = B.cv, ctx = cv.getContext('2d'), lo = 0, hi = 0;
+  metrics.forEach(function (m) { m.values.forEach(function (v) { lo = Math.min(lo, v); hi = Math.max(hi, v); }); });
+  var sc = niceScale(lo, hi), top = sc.top, bottom = sc.bottom;
+  function draw() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = B.holder.clientWidth, barH = 7, gap = 3, labelH = 16, rowH = labelH + metrics.length * (barH + gap) + 8, h = rowNames.length * rowH + 22;
+    cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + 'px'; cv.style.height = h + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var L = 4, R = 40, pw = w - L - R, X = function (v) { return L + pw * (v - bottom) / (top - bottom || 1); };
+    ctx.clearRect(0, 0, w, h); ctx.font = '11px ' + getComputedStyle(document.body).getPropertyValue('--sans');
+    ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.fillStyle = '#85837a';
+    sc.ticks.forEach(function (v, k) { var x = Math.round(X(v)) + 0.5; ctx.beginPath(); ctx.moveTo(x, 2); ctx.lineTo(x, h - 18); ctx.stroke();
+      ctx.textAlign = k === 0 ? 'left' : k === sc.ticks.length - 1 ? 'right' : 'center'; ctx.fillText(fmtNum(v), x, h - 5); });
+    rowNames.forEach(function (name, r) { var y0 = 2 + r * rowH;
+      ctx.fillStyle = '#d7d5cc'; ctx.textAlign = 'left'; ctx.fillText(name, L, y0 + 11);
+      metrics.forEach(function (m, k) { var v = m.values[r], y = y0 + labelH + k * (barH + gap), x0 = X(0), x1 = X(v);
+        ctx.fillStyle = m.color; ctx.fillRect(Math.min(x0, x1), y, Math.max(1, Math.abs(x1 - x0)), barH);
+        ctx.fillStyle = '#b1afa4'; ctx.textAlign = 'left'; ctx.fillText(fmtNum(v), Math.max(x0, x1) + 4, y + barH); }); });
+  }
+  B.read.innerHTML = metrics.length > 1 ? metrics.map(function (m) { return '<span><i style="background:' + m.color + '"></i>' + esc(m.name) + '</span>'; }).join(' ') : '';
+  cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', title + '. ' + rowNames.map(function (n, r) { return n + ': ' + metrics.map(function (m) { return m.name + ' ' + fmtNum(m.values[r]); }).join(', '); }).join('; ') + '.');
+  draw(); return draw;
+}
+function chartGrid(parent) { var g = document.createElement('div'); g.className = 'chart-grid'; parent.appendChild(g); return g; }
+
+/* ---------- in-article figures: a ```viz name``` block in Markdown becomes a live figure ---------- */
+var VIZ = {}, vizCleanups = [];
+function unmountFigures() { vizCleanups.forEach(function (f) { try { f(); } catch (e) {} }); vizCleanups = []; }
+function mountFigures(root) {
+  unmountFigures();
+  root.querySelectorAll('figure[data-viz]').forEach(function (fig) {
+    var def = VIZ[fig.getAttribute('data-viz')];
+    if (!def) { fig.innerHTML = '<figcaption>Unknown figure “' + esc(fig.getAttribute('data-viz')) + '”. Available: ' + Object.keys(VIZ).join(', ') + '.</figcaption>'; return; }
+    fig.innerHTML = '';
+    var visible = { on: true };
+    if ('IntersectionObserver' in window) { var io = new IntersectionObserver(function (es) { visible.on = es[0].isIntersecting; }); io.observe(fig); vizCleanups.push(function () { io.disconnect(); }); }
+    var stop = def.mount(fig, visible);
+    if (stop) vizCleanups.push(stop);
+  });
+}
+var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function vizCanvas(fig, aspect) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage';
+  var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var dpr = Math.min(2, window.devicePixelRatio || 1), st = { c: c, ctx: c.getContext('2d'), w: 0, h: 0, dpr: dpr };
+  st.fit = function () { var w = wrap.clientWidth || 600, h = Math.round(w * aspect); st.w = w; st.h = h;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = w + 'px'; c.style.height = h + 'px'; st.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  st.fit(); return st;
+}
+function vizControls(fig) { var d = document.createElement('div'); d.className = 'viz-controls'; fig.appendChild(d); return d; }
+function vizCaption(fig, html) { var f = document.createElement('figcaption'); f.innerHTML = html; fig.appendChild(f); return f; }
+function loop(visible, fn) { var raf = 0, last = performance.now(); function f(t) { raf = requestAnimationFrame(f); var dt = Math.min(0.05, (t - last) / 1000); last = t; if (visible.on) fn(dt, t); } raf = requestAnimationFrame(f); return function () { cancelAnimationFrame(raf); }; }
+
+/* 1. Motion distortion: a spinning 2D LIDAR driving through a room */
+VIZ['motion-distortion'] = { mount: function (fig, visible) {
+  var st = vizCanvas(fig, 0.56), ctrl = vizControls(fig);
+  ctrl.innerHTML = '<label>Robot speed <input type="range" min="0" max="10" step="0.5" value="5"> <output>5.0 m/s</output></label>' +
+    '<label class="check"><input type="checkbox"> Correct with odometry (deskew)</label>';
+  var speedIn = ctrl.querySelector('input[type=range]'), out = ctrl.querySelector('output'), deskew = ctrl.querySelector('input[type=checkbox]');
+  var cap = vizCaption(fig, '');
+  var ROOM = [[0, 0, 14, 0], [14, 0, 14, 7], [14, 7, 0, 7], [0, 7, 0, 0], [8, 4.4, 9, 4.4], [9, 4.4, 9, 5.4], [9, 5.4, 8, 5.4], [8, 5.4, 8, 4.4], [4, 1.2, 5.4, 1.2], [5.4, 1.2, 5.4, 1.9], [5.4, 1.9, 4, 1.9], [4, 1.9, 4, 1.2]];
+  function cast(px, py, th) { var dx = Math.cos(th), dy = Math.sin(th), best = 1e9;
+    ROOM.forEach(function (w) { var ex = w[2] - w[0], ey = w[3] - w[1], den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) return;
+      var t = ((w[0] - px) * ey - (w[1] - py) * ex) / den, u = ((w[0] - px) * dy - (w[1] - py) * dx) / den;
+      if (t > 0 && u >= 0 && u <= 1 && t < best) best = t; }); return best; }
+  var SWEEP_VIS = 2.2, SWEEP_REAL = 0.1, SAMPLES = 540, x = 2, dirX = 1, phase = 0, cur = [], prev = [], startPose = null;
+  function speed() { return parseFloat(speedIn.value); }
+  function update() { out.textContent = speed().toFixed(1) + ' m/s';
+    cap.innerHTML = 'A 10 Hz spinning LIDAR on a robot driving at ' + speed().toFixed(1) + ' m/s moves <strong>' + (speed() * SWEEP_REAL * 100).toFixed(0) + ' cm</strong> during one sweep (animation slowed about 20×). ' +
+      (deskew.checked ? 'Each point is placed using where the robot was at the instant it was measured, so the walls come out straight.' : 'Every point is placed as if the robot stood still at the start of the sweep, so walls smear and a step appears where the sweep ends.'); }
+  speedIn.oninput = update; deskew.onchange = function () { update(); prev = []; }; update();
+  var ro = new ResizeObserver(function () { st.fit(); }); ro.observe(fig);
+  function toScreen(X, Y) { var sc = Math.min(st.w / 15, st.h / 8); return [st.w / 2 + (X - 7) * sc, st.h / 2 + (Y - 3.5) * sc, sc]; }
+  var stop = loop(visible, function (dt) {
+    var v = speed(), dist = v * SWEEP_REAL * (dt / SWEEP_VIS);  // real metres moved this frame
+    if (REDUCED) dt = SWEEP_VIS / 60;
+    var steps = Math.max(1, Math.round(SAMPLES * dt / SWEEP_VIS));
+    for (var i = 0; i < steps; i++) {
+      if (!startPose) startPose = { x: x, y: 3 };
+      var th = phase * Math.PI * 2, r = cast(x, 3, th);
+      var bx = deskew.checked ? x : startPose.x;
+      if (r < 1e8) cur.push([bx + Math.cos(th) * r, 3 + Math.sin(th) * r]);
+      x += dirX * v * SWEEP_REAL / SAMPLES * 1; if (x > 12.5) dirX = -1; if (x < 1.5) dirX = 1;
+      phase += 1 / SAMPLES; if (phase >= 1) { phase -= 1; prev = cur; cur = []; startPose = null; }
+    }
+    var c = st.ctx; c.clearRect(0, 0, st.w, st.h);
+    c.strokeStyle = 'rgba(177,175,164,0.25)'; c.lineWidth = 1; c.beginPath();
+    ROOM.forEach(function (w) { var p = toScreen(w[0], w[1]), q = toScreen(w[2], w[3]); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); }); c.stroke();
+    c.fillStyle = 'rgba(116,163,227,0.45)'; prev.forEach(function (p) { var s = toScreen(p[0], p[1]); c.fillRect(s[0] - 1, s[1] - 1, 2, 2); });
+    c.fillStyle = '#e6b85c'; cur.forEach(function (p) { var s = toScreen(p[0], p[1]); c.fillRect(s[0] - 1.25, s[1] - 1.25, 2.5, 2.5); });
+    var rp = toScreen(x, 3), th2 = phase * Math.PI * 2, rr = cast(x, 3, th2), hp = toScreen(x + Math.cos(th2) * rr, 3 + Math.sin(th2) * rr);
+    c.strokeStyle = 'rgba(224,104,95,0.8)'; c.beginPath(); c.moveTo(rp[0], rp[1]); c.lineTo(hp[0], hp[1]); c.stroke();
+    c.fillStyle = '#f7f5ee'; c.beginPath(); c.arc(rp[0], rp[1], Math.max(4, rp[2] * 0.22), 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(247,245,238,0.9)'; c.font = '12px ' + getComputedStyle(document.body).getPropertyValue('--sans');
+    c.fillText('gold: this sweep   blue: last sweep   grey: true walls', 10, st.h - 10);
+  });
+  return function () { stop(); ro.disconnect(); };
+} };
+
+/* 2. RANSAC ground removal, then clustering what is left */
+VIZ['ransac'] = { mount: function (fig, visible) {
+  var st = vizCanvas(fig, 0.5), ctrl = vizControls(fig);
+  ctrl.innerHTML = '<label>Inlier distance <input type="range" min="0.05" max="0.4" step="0.01" value="0.12"> <output>0.12 m</output></label><button type="button" class="btn">New scene</button>';
+  var thIn = ctrl.querySelector('input'), out = ctrl.querySelector('output'), cap = vizCaption(fig, '');
+  var pts, best, cand, iter, phase, phaseT, labels, K = 45;
+  function scene() {
+    pts = []; var tilt = (Math.random() - 0.5) * 0.08, base = 0.3 + Math.random() * 0.2;
+    for (var i = 0; i < 170; i++) { var X = Math.random() * 12; pts.push([X, base + tilt * X + (Math.random() - 0.5) * 0.08]); }
+    var n = 2 + ((Math.random() * 2) | 0);
+    for (var b = 0; b < n; b++) { var x0 = 1 + b * (10 / n) + Math.random() * 1.2, w = 0.8 + Math.random() * 1.2, h = 0.6 + Math.random() * 1.6, y0 = base + tilt * x0;
+      for (var j = 0; j < 45; j++) { var side = Math.random(); var p;
+        if (side < 0.35) p = [x0 + (Math.random() * 0.04), y0 + Math.random() * h];
+        else if (side < 0.7) p = [x0 + Math.random() * w, y0 + h + (Math.random() - 0.5) * 0.04];
+        else p = [x0 + w + (Math.random() * 0.04), y0 + Math.random() * h];
+        pts.push([p[0] + (Math.random() - 0.5) * 0.05, p[1] + (Math.random() - 0.5) * 0.05]); } }
+    for (var o = 0; o < 14; o++) pts.push([Math.random() * 12, base + 0.3 + Math.random() * 3]);
+    best = null; cand = null; iter = 0; phase = 'search'; phaseT = 0; labels = null;
+  }
+  function lineOf(a, b) { var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return { a: a, nx: -dy / L, ny: dx / L }; }
+  function dist(l, p) { return Math.abs((p[0] - l.a[0]) * l.nx + (p[1] - l.a[1]) * l.ny); }
+  function count(l) { var t = parseFloat(thIn.value), n = 0; for (var i = 0; i < pts.length; i++) if (dist(l, pts[i]) < t) n++; return n; }
+  function cluster() { // Euclidean clustering on points that are not floor
+    var t = parseFloat(thIn.value), rest = [], lab = new Int32Array(pts.length).fill(-2), next = 0;
+    for (var i = 0; i < pts.length; i++) if (dist(best.l, pts[i]) >= t) { lab[i] = -1; rest.push(i); }
+    rest.forEach(function (i) { if (lab[i] !== -1) return; var q = [i], members = []; lab[i] = next;
+      while (q.length) { var k = q.pop(); members.push(k); rest.forEach(function (j) { if (lab[j] === -1 && Math.hypot(pts[j][0] - pts[k][0], pts[j][1] - pts[k][1]) < 0.45) { lab[j] = next; q.push(j); } }); }
+      if (members.length < 6) members.forEach(function (m) { lab[m] = -3; }); else next++; });
+    labels = lab; return next;
+  }
+  thIn.oninput = function () { out.textContent = parseFloat(thIn.value).toFixed(2) + ' m'; scene(); };
+  ctrl.querySelector('button').onclick = scene; scene();
+  var ro = new ResizeObserver(function () { st.fit(); }); ro.observe(fig);
+  var CL = ['#e6b85c', '#e0685f', '#74a3e3', '#c58fd6', '#6fb57d'], nClusters = 0;
+  function S(p) { var sc = Math.min(st.w / 12.6, st.h / 4.6); return [st.w / 2 + (p[0] - 6) * sc, st.h - 16 - (p[1] - 0.1) * sc, sc]; }
+  var stop = loop(visible, function (dt) {
+    phaseT += REDUCED ? 99 : dt;
+    if (phase === 'search') {
+      while (phaseT > 0.12 && iter < K) { phaseT -= 0.12; iter++;
+        var a = pts[(Math.random() * pts.length) | 0], b = pts[(Math.random() * pts.length) | 0]; if (a === b) continue;
+        var l = lineOf(a, b), n = count(l); cand = { l: l, n: n, a: a, b: b }; if (!best || n > best.n) best = cand; }
+      if (iter >= K) { phase = 'remove'; phaseT = 0; nClusters = cluster(); }
+    } else if (phase === 'remove' && phaseT > 1.4) { phase = 'cluster'; phaseT = 0; }
+    else if (phase === 'cluster' && phaseT > 5) scene();
+    var c = st.ctx, t = parseFloat(thIn.value); c.clearRect(0, 0, st.w, st.h);
+    function band(l, col, fill) { var p0 = [l.a[0] - l.ny * 40, l.a[1] + l.nx * 40], p1 = [l.a[0] + l.ny * 40, l.a[1] - l.nx * 40];
+      var A = S(p0), B = S(p1), off = t * A[2];
+      c.fillStyle = fill; c.beginPath(); c.moveTo(A[0] - l.nx * off, A[1] + l.ny * off); c.lineTo(B[0] - l.nx * off, B[1] + l.ny * off); c.lineTo(B[0] + l.nx * off, B[1] - l.ny * off); c.lineTo(A[0] + l.nx * off, A[1] - l.ny * off); c.fill();
+      c.strokeStyle = col; c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke(); }
+    if (phase === 'search' && cand) band(cand.l, 'rgba(224,104,95,0.7)', 'rgba(224,104,95,0.08)');
+    if (best && phase === 'search') band(best.l, 'rgba(111,181,125,0.9)', 'rgba(111,181,125,0.1)');
+    for (var i = 0; i < pts.length; i++) { var s = S(pts[i]), col;
+      if (phase === 'search') col = best && dist(best.l, pts[i]) < t ? '#6fb57d' : '#b1afa4';
+      else { var lb = labels[i]; col = lb === -2 ? (phase === 'remove' ? 'rgba(111,181,125,0.5)' : 'rgba(111,181,125,0.12)') : lb === -3 ? '#6a6860' : (phase === 'remove' ? '#b1afa4' : CL[lb % CL.length]); }
+      c.fillStyle = col; c.fillRect(s[0] - 1.5, s[1] - 1.5, 3, 3); }
+    if (phase === 'search' && cand) [cand.a, cand.b].forEach(function (p) { var s = S(p); c.strokeStyle = '#f7f5ee'; c.beginPath(); c.arc(s[0], s[1], 5, 0, Math.PI * 2); c.stroke(); });
+    cap.innerHTML = phase === 'search' ? 'Iteration ' + iter + ' of ' + K + ': pick two random points, draw the line through them, count points within ' + t.toFixed(2) + ' m. Best so far: <strong>' + (best ? best.n : 0) + '</strong> inliers (green).'
+      : phase === 'remove' ? 'Floor found. Its ' + best.n + ' inliers get removed.' : 'What is left gets grouped by distance: <strong>' + nClusters + '</strong> objects, with stray points in dark grey. Too loose a threshold eats the bottoms of objects; too tight leaves floor behind.';
+  });
+  return function () { stop(); ro.disconnect(); };
+} };
+
+/* 3. The LIDAR rover, small enough to sit in an article */
+VIZ['lidar-life'] = { mount: function (fig, visible) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage'; var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var ctrl = vizControls(fig); ctrl.innerHTML = '<button type="button" class="btn" data-m="glider-rain">Glider rain</button><button type="button" class="btn" data-m="soup">Random soup</button><button type="button" class="btn" data-r>Reset</button><span class="viz-hint">Click the grid to throw an obstacle.</span>';
+  var cap = vizCaption(fig, ''), sim, s, buf, ctx = c.getContext('2d'), acc = 0, capT = 0, mode = 'glider-rain';
+  function setup() { var w = wrap.clientWidth || 600; s = Math.max(4, Math.floor(w / 120)); var cols = Math.floor(w / s), rows = Math.round(cols * 0.55);
+    c.width = cols * s; c.height = rows * s; c.style.width = cols * s + 'px'; c.style.height = rows * s + 'px';
+    sim = new RoverSim(cols, rows, { mode: mode, range: 22 }); buf = roverBuffers(sim); sim.scan(); }
+  setup();
+  ctrl.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode = b.getAttribute('data-m'); sim.mode = mode; sim.reset(); }; });
+  ctrl.querySelector('[data-r]').onclick = function () { sim.reset(); };
+  c.addEventListener('pointerdown', function (ev) { var r = c.getBoundingClientRect(); sim.drop(Math.floor((ev.clientX - r.left) / s), Math.floor((ev.clientY - r.top) / s)); });
+  var stop = loop(visible, function (dt, t) {
+    if (!REDUCED) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) sim.step(); }
+    drawRover(sim, ctx, buf.off, buf.offCtx, s, buf.o);
+    if (t - capT > 500) { capT = t; cap.textContent = roverStats(sim) + (sim.lastP != null ? ' Chance the chosen move collides: ' + Math.round(sim.lastP * 100) + '%.' : ''); }
+  });
+  return stop;
+} };
+
+/* 4. The hunting rover with a strategy picker and a paired benchmark */
+VIZ['rover-hunt'] = { mount: function (fig, visible) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage'; var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var ctrl = vizControls(fig);
+  ctrl.innerHTML = '<label>Strategy <select data-s>' + HUNT_STRATEGIES.map(function (s) { return '<option value="' + s.id + '">' + esc(s.name) + '</option>'; }).join('') + '</select></label>' +
+    '<label>World <select data-w><option value="glider-rain">Glider rain</option><option value="soup">Random soup</option></select></label>' +
+    '<button type="button" class="btn" data-r>Reset</button><button type="button" class="btn" data-b>Run benchmark</button>';
+  var cap = vizCaption(fig, ''), table = document.createElement('div'); table.className = 'viz-table'; fig.appendChild(table);
+  var selS = ctrl.querySelector('[data-s]'), selW = ctrl.querySelector('[data-w]'), benchBtn = ctrl.querySelector('[data-b]');
+  var sim, s, buf, ctx = c.getContext('2d'), acc = 0, capT = 0, cancelBench = null, charts = [];
+  var ro = new ResizeObserver(function () { charts.forEach(function (d) { d(); }); }); ro.observe(table);
+  function setup() { var w = wrap.clientWidth || 600; s = Math.max(4, Math.floor(w / 120)); var cols = Math.floor(w / s), rows = Math.round(cols * 0.55);
+    c.width = cols * s; c.height = rows * s; c.style.width = cols * s + 'px'; c.style.height = rows * s + 'px';
+    sim = new HunterSim(cols, rows, { world: selW.value, strategy: selS.value, range: 22 }); buf = roverBuffers(sim); sim.scan(); }
+  setup();
+  selS.onchange = setup; selW.onchange = setup; ctrl.querySelector('[data-r]').onclick = setup;
+  c.addEventListener('pointerdown', function (ev) { var r = c.getBoundingClientRect(); sim.drop(Math.floor((ev.clientX - r.left) / s), Math.floor((ev.clientY - r.top) / s)); });
+  benchBtn.onclick = function () {
+    if (cancelBench) return;
+    benchBtn.disabled = true; var world = selW.value;
+    table.innerHTML = '<p>Running every strategy on the same 4 seeded ' + (world === 'soup' ? 'soup' : 'glider rain') + ' worlds for 1,000 generations each: <span data-p>0%</span></p>';
+    cancelBench = huntBenchmark(world, { trials: 4, gens: 1000 }, function (f) { var p = table.querySelector('[data-p]'); if (p) p.textContent = Math.round(f * 100) + '%'; },
+      function (res) { cancelBench = null; benchBtn.disabled = false;
+        var rows = HUNT_STRATEGIES.map(function (st) { var r = res[st.id], f = function (k) { return (r[k] / r.n).toFixed(1); };
+          return '<tr><th scope="row">' + esc(st.name) + '</th><td>' + f('direct') + '</td><td>' + f('indirect') + '</td><td>' + f('created') + '</td><td>' + ((r.indirect - r.created) / r.n).toFixed(1) + '</td><td>' + f('gap') + '</td></tr>'; }).join('');
+        table.innerHTML = '<table><thead><tr><th>Per 100 generations</th><th>Direct kills</th><th>Indirect kills</th><th>Cells created</th><th>Net indirect</th><th>Fewer cells than twin (avg)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<p>' + (world === 'soup' ? 'Random soup' : 'Glider rain') + ', 120 × 80 torus, 4 seeds × 1,000 generations. The last column compares population with an identical world that never had a rover in it.</p>';
+        var names = HUNT_STRATEGIES.map(function (st) { return st.name; }), avg = function (k) { return HUNT_STRATEGIES.map(function (st) { return res[st.id][k] / res[st.id].n; }); };
+        var lines = function (key) { return HUNT_STRATEGIES.map(function (st) { var ag = aggregate(res[st.id].traces, key); return { name: st.name, color: STRAT_COLORS[st.id], mean: ag.mean, lo: ag.lo, hi: ag.hi }; }); };
+        table.insertAdjacentHTML('beforeend', '<p class="chart-legend">' + HUNT_STRATEGIES.map(function (st) { return '<span><i style="background:' + STRAT_COLORS[st.id] + '"></i>' + esc(st.name) + '</span>'; }).join('') + '</p>');
+        var grid = chartGrid(table);
+        charts = [
+          barChart(grid, 'What each strategy does per 100 generations', 'Direct kills, indirect kills, and cells its presence created.', names,
+            [{ name: 'Direct kills', color: '#e0685f', values: avg('direct') }, { name: 'Indirect kills', color: '#e6b85c', values: avg('indirect') }, { name: 'Cells created', color: '#74a3e3', values: avg('created') }]),
+          lineChart(grid, 'Direct kills so far', 'Cumulative cells the rover stepped on.', lines('direct'), 10),
+          lineChart(grid, 'Net indirect kills so far', 'Cumulative indirect kills minus cells created. Flat means churn: killing cells that grow back.', lines('net'), 10),
+          lineChart(grid, 'Population gap vs the twin world', 'Above zero: fewer live cells than an identical world with no rover.', lines('gap'), 10)
+        ]; });
+  };
+  var stop = loop(visible, function (dt, t) {
+    if (!REDUCED) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) sim.step(); }
+    drawRover(sim, ctx, buf.off, buf.offCtx, s, buf.o);
+    if (t - capT > 500) { capT = t; var p = sim.per100();
+      cap.innerHTML = 'Generation ' + sim.gen.toLocaleString() + '. Per 100 generations: <strong>' + p.direct.toFixed(1) + '</strong> direct kills (red), <strong>' + p.indirect.toFixed(1) + '</strong> indirect kills (gold), <strong>' + p.created.toFixed(1) + '</strong> cells created (blue). ' + (sim.twinPop != null ? 'Population ' + sim.pop + ' vs ' + sim.twinPop + ' in the twin world with no rover.' : ''); }
+  });
+  return function () { stop(); ro.disconnect(); if (cancelBench) cancelBench(); };
+} };
+
+/* 5. Farming: energy economy, reproduction, and a benchmark */
+VIZ['rover-farm'] = { mount: function (fig, visible) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage'; var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var ctrl = vizControls(fig);
+  ctrl.innerHTML = '<label>Strategy <select data-s>' + FARM_STRATEGIES.map(function (s) { return '<option value="' + s.id + '">' + esc(s.name) + '</option>'; }).join('') + '</select></label>' +
+    '<label>World <select data-w><option value="soup">Random soup</option><option value="glider-rain">Glider rain</option></select></label>' +
+    '<label>Move cost <input type="range" min="0" max="5" step="0.5" value="1" data-c> <output data-co>1</output></label>' +
+    '<label>Meal reward <input type="range" min="1" max="20" step="1" value="10" data-f> <output data-fo>10</output></label>' +
+    '<button type="button" class="btn" data-r>Reset</button><button type="button" class="btn" data-b>Run benchmark</button>';
+  var cap = vizCaption(fig, ''), table = document.createElement('div'); table.className = 'viz-table'; fig.appendChild(table);
+  var q = function (sel) { return ctrl.querySelector(sel); }, sim, s, B, ctx = c.getContext('2d'), acc = 0, capT = 0, cancelBench = null, charts = [];
+  var ro = new ResizeObserver(function () { charts.forEach(function (d) { d(); }); }); ro.observe(table);
+  function params() { return { moveCost: parseFloat(q('[data-c]').value), foodReward: parseFloat(q('[data-f]').value) }; }
+  function setup() { var w = wrap.clientWidth || 600; s = Math.max(4, Math.floor(w / 120)); var cols = Math.floor(w / s), rows = Math.round(cols * 0.55);
+    c.width = cols * s; c.height = rows * s; c.style.width = cols * s + 'px'; c.style.height = rows * s + 'px';
+    var o = { world: q('[data-w]').value, strategy: q('[data-s]').value }, p = params(); for (var k in p) o[k] = p[k];
+    sim = new FarmSim(cols, rows, o); B = farmBuffers(sim); }
+  setup();
+  q('[data-s]').onchange = setup; q('[data-w]').onchange = setup; q('[data-r]').onclick = setup;
+  q('[data-c]').oninput = function () { q('[data-co]').textContent = this.value; setup(); };
+  q('[data-f]').oninput = function () { q('[data-fo]').textContent = this.value; setup(); };
+  c.addEventListener('pointerdown', function (ev) { var r = c.getBoundingClientRect(); sim.drop(Math.floor((ev.clientX - r.left) / s), Math.floor((ev.clientY - r.top) / s)); });
+  q('[data-b]').onclick = function () {
+    if (cancelBench) return; var btn = q('[data-b]'); btn.disabled = true; var world = q('[data-w]').value, p = params();
+    table.innerHTML = '<p>Running every strategy on the same 4 seeded ' + (world === 'soup' ? 'soup' : 'glider rain') + ' worlds for 1,000 generations each: <span data-p>0%</span></p>';
+    cancelBench = farmBenchmark(world, p, { trials: 4, gens: 1000 }, function (f) { var el = table.querySelector('[data-p]'); if (el) el.textContent = Math.round(f * 100) + '%'; },
+      function (res) { cancelBench = null; btn.disabled = false;
+        var rows = FARM_STRATEGIES.map(function (st) { var r = res[st.id], filled = r.full.filter(function (x) { return x != null; });
+          var avg = filled.length ? Math.round(filled.reduce(function (x, y) { return x + y; }, 0) / filled.length) : null;
+          return '<tr><th scope="row">' + esc(st.name) + '</th><td>' + (r.eaten / r.n).toFixed(0) + '</td><td>' + Math.round(100 * r.farmedShare / r.n) + '%</td><td>' + (r.perMove / r.n).toFixed(2) + '</td><td>' + (r.rovers / r.n).toFixed(1) + '</td><td>' + (avg == null ? 'never' : 'gen ' + avg + (filled.length < r.n ? ' (' + filled.length + ' of ' + r.n + ' runs)' : '')) + '</td></tr>'; }).join('');
+        table.innerHTML = '<table><thead><tr><th></th><th>Cells eaten per 100 gens</th><th>Farmed share</th><th>Meals per move</th><th>Rovers at gen 1,000</th><th>Colony full (40)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<p>' + (world === 'soup' ? 'Random soup' : 'Glider rain') + ', move cost ' + p.moveCost + ', meal reward ' + p.foodReward + ', split at 100 energy, 120 × 80 torus, 4 seeds × 1,000 generations.</p>';
+        var names = FARM_STRATEGIES.map(function (st) { return st.name; }), avg = function (k) { return FARM_STRATEGIES.map(function (st) { return res[st.id][k] / res[st.id].n; }); };
+        var lines = function (key) { return FARM_STRATEGIES.map(function (st) { var ag = aggregate(res[st.id].traces, key); return { name: st.name, color: STRAT_COLORS[st.id], mean: ag.mean, lo: ag.lo, hi: ag.hi }; }); };
+        table.insertAdjacentHTML('beforeend', '<p class="chart-legend">' + FARM_STRATEGIES.map(function (st) { return '<span><i style="background:' + STRAT_COLORS[st.id] + '"></i>' + esc(st.name) + '</span>'; }).join('') + '</p>');
+        var grid = chartGrid(table);
+        charts = [
+          lineChart(grid, 'Colony size', 'Rovers alive. The colony is capped at 40.', lines('rovers'), 10),
+          lineChart(grid, 'Cells eaten so far', 'Cumulative meals across the whole colony.', lines('eaten'), 10),
+          lineChart(grid, 'Farmed share of meals', 'Share of all meals so far that were cells a rover made grow.', lines('farmed'), 10, '%'),
+          barChart(grid, 'Meals per move', 'How often paying to move ends in a meal. The ambusher only moves to eat, so it is always 1.', names, [{ name: 'Meals per move', color: '#e6b85c', values: avg('perMove') }])
+        ]; });
+  };
+  var stop = loop(visible, function (dt, t) {
+    if (!REDUCED) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) sim.step(); }
+    drawFarm(sim, ctx, B, s);
+    if (t - capT > 500) { capT = t; cap.textContent = farmStatsText(sim); }
+  });
+  return function () { stop(); ro.disconnect(); if (cancelBench) cancelBench(); };
+} };
+
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>
+</body>
+</html>
