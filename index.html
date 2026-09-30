@@ -334,8 +334,8 @@ a:hover{text-decoration-thickness:2px}
     "planning",
     "game of life"
    ],
-   "summary": "Moving costs energy, eating earns it, and at 100 a rover splits. Four strategies, and why the farmer wins.",
-   "body": "In [part 1.6](#/e/lidar-rover-hunts), the parked rover kept \"killing\" the same cells over and over, because its presence as a neighbour made them grow back. I treated that as a flaw in my metric. It's also a strategy: farming. So this time I changed the incentives to reward it.\n\n## The new economy\n\n- **Moving costs energy:** 1 per step by default. Staying still is free.\n- **Eating earns energy:** 10 per cell by default. Eating means stepping onto a live cell.\n- **At 100 energy, a rover splits.** A child appears in a free neighbouring cell, and both counters reset to zero.\n\nA rover with no energy can't wander, but it can still step onto a live cell next to it, because the meal pays for the step. Rovers are still immortal live cells, they can't step on each other, and each one only knows what its own 72-beam LIDAR sees. Colonies are capped at 40 rovers to keep the page fast; the rays you see belong to the first rover.\n\nA meal counts as **farmed** if the cell only exists because a rover was next to it: it was born, or kept alive, because a rover added one to its neighbour count, and it has stayed alive since. That's the number I actually care about.\n\n```viz rover-farm\n```\n\n## Four strategies\n\n1. **Farmer:** scores each move by the energy it earns now, plus the food it expects to have next to it next generation, counting the cells its own presence will make grow. It only goes exploring while it can afford to.\n2. **Ambusher:** never pays to move. It waits until a live cell appears next to it, then eats it.\n3. **Greedy eater:** eats anything next to it, otherwise pays to chase the nearest LIDAR hit.\n4. **Random walker:** moves at random whenever it can afford to. A baseline.\n\n## The math\n\nRovers work exactly as in [part 1.6](#/e/lidar-rover-hunts): immortal live cells that eat by stepping onto live cells. What's new is energy.\n\n**The energy budget.** Each rover has an energy counter E. With meal reward R, move cost $c_m$ and idle cost $c_i$:\n\n```math\nE_{t+1} = max( 0,  E_t + R \u00b7 \ud835\udfd9[ate]  \u2212  c_m \u00b7 \ud835\udfd9[moved]  \u2212  c_i )\nR = 10,   c_m = 1,   c_i = 0,   E = 50 for the first rover\n```\n\nA rover can never go into debt, so some moves aren't allowed:\n\n```math\nonto a live cell:      allowed if  E_t \u2212 c_m + R \u2265 0      (the meal pays for the step)\nonto an empty cell:    allowed if  E_t \u2265 c_m\nonto another rover:    never\n```\n\n**Splitting.** With threshold \u03b8 = 100 and a cap of 40 rovers:\n\n```math\nif E \u2265 \u03b8,  n \u003c 40  and a neighbouring cell is empty:    new rover there with E = 0,  parent E \u2190 0\nif n = 40:    E \u2190 min(E, \u03b8)\n```\n\n**Farmed cells.** $M_t(c)$ is 1 when at least one rover r caused cell c: c lives next generation *with* r counted, and wouldn't without it. $N\u2032_r(c)$ is the counterfactual from part 1.6, computed for that rover. A cell stays farmed for as long as it stays alive:\n\n```math\nM_t(c) = 1  if  \u2203 r :  L( A(c), N(c) ) = 1  and  L( A(c), N\u2032_r(c) ) = 0\nF_{t+1}(c) = A_{t+1}(c) \u00b7 [ M_t(c)  \u2228  ( F_t(c) \u2227 A_t(c) ) ]\nfarmed share = ( meals on cells with F = 1 ) / ( all meals )\n```\n\n**The farmer's value function.** For each affordable move m, the farmer predicts how many non-rover cells will be alive next to x + m next generation if it stands there. It applies L to the LIDAR belief, with itself counted as a live neighbour and the cell it's leaving counted as empty:\n\n```math\nn\u0302(m) = \u03a3_{c \u2208 \ud835\udca9(x + m)} L\u0302( c | rover at x + m )\nF(m) = 0  if n\u0302(m) = 0,    else  0.9 \u00b7 (R \u2212 c_m)  +  0.3 \u00b7 min( n\u0302(m) \u2212 1, 3 )\nV(m) = R \u00b7 \ud835\udfd9[food at x + m]  \u2212  c_m \u00b7 \ud835\udfd9[m \u2260 0]  +  F(m)  +  \u03b5\nm\u22c6 = argmax_{affordable m} V(m)\n```\n\n- **R \u00b7 \ud835\udfd9[food] \u2212 $c_m$ \u00b7 \ud835\udfd9[move]** is the energy it gains or spends right now.\n- **F(m)** values standing next to future food at about one discounted meal: 0.9 of the net value R \u2212 $c_m$. Only one cell can be eaten per generation, so extra food nearby is worth only a little more, capped at 3 \u00d7 0.3.\n- **Standing still costs nothing**, so if its current spot will grow food, V(0) = F(0) beats paying to move anywhere that won't. That's what makes it park and farm.\n\nIf nothing scores at least 0.5 and it has energy to spare, it explores:\n\n```math\nif  V(m\u22c6) \u003c 0.5  and  E > 3 \u00b7 c_m + 5:     m\u22c6 = m_{toward}\nm_{toward} = step toward the nearest seen food, or wander (new random heading with probability 0.05)\n```\n\n**The other strategies** use the same energy rules, and fall back to staying put when a move isn't affordable:\n\n```math\nAmbusher:       m\u22c6 = a random neighbouring live cell if there is one,  else (0, 0)\nGreedy eater:   m\u22c6 = a random neighbouring live cell if there is one,  else m_{toward}\nRandom walker:  m\u22c6 ~ Uniform{ \u22121, 0, 1 }\u00b2\n```\n\n**The scores in the table:**\n\n```math\ncells eaten per 100 generations = (100 / T) \u00b7 \u03a3_t meals_t\nmeals per move = \u03a3_t meals_t / \u03a3_t moves_t\ncolony full = first t with n_t = 40\n```\n\n## Results\n\nSame setup as before: four seeded worlds per strategy, 1,000 generations each, on a 120 \u00d7 80 wrap-around grid, move cost 1, meal reward 10. \"Colony full\" is the average generation the colony reached 40 rovers. The benchmark button on the figure reruns exactly this, and the sliders let you change the costs first.\n\n**Random soup:**\n\n| Strategy | Cells eaten per 100 gens | Farmed share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 2,189 | 72% | 0.87 | 40 | gen 91 |\n| Ambusher | 868 | 71% | 1.00 | 40 | gen 250 |\n| Greedy eater | 528 | 57% | 0.37 | 40 | gen 102 |\n| Random walker | 461 | 70% | 0.22 | 30.8 | gen 349 (3 of 4 runs) |\n\n**Glider rain:**\n\n| Strategy | Cells eaten per 100 gens | Farmed share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 1,300 | 76% | 0.87 | 40 | gen 463 |\n| Ambusher | 200 | 43% | 1.00 | 21.5 | gen 618 (1 of 4 runs) |\n| Greedy eater | 249 | 61% | 0.23 | 40 | gen 340 |\n| Random walker | 273 | 75% | 0.23 | 31.5 | gen 673 (3 of 4 runs) |\n\n## What I think it means\n\n**The farmer wins by a lot.** It eats about 2.5 times as much as the next strategy in soup and about 5 times as much in glider rain. Almost nine out of ten of its moves end in a meal, and about three quarters of what it eats is food it grew.\n\n**Farming happens even when nobody plans it.** Every strategy except the ambusher in glider rain ends up with a farmed share around 60 to 75%. Once there are dozens of immortal live cells packed together, they make cells grow around them whether they mean to or not, and anything that eats nearby is eating crops. The farmer's advantage isn't that it farms, it's that it farms *efficiently*: it picks the spot where its presence grows the most food, and it stops paying to move.\n\n**Waiting is not the same as farming.** The ambusher never wastes a move, but in glider rain it barely grew: most runs never filled the colony. Standing still only pays if you're standing somewhere that produces food.\n\n**Greedy is fast early and wasteful later.** It filled the colony in soup nearly as fast as the farmer, but only about one in three of its moves was a meal, so once the colony was full it harvested a quarter of what the farmers did.\n\n**Move cost is what makes it a farming game.** When I tripled the move cost to 3, the farmer barely noticed (2,171 cells per 100 generations in soup), greedy dropped to 312, and the random walker never split at all: it stayed a single rover eating about 10 cells per 100 generations.\n\n## Caveats\n\n- The 40-rover cap shapes everything after the colony fills. These numbers compare harvesting rates at the cap more than growth.\n- My farmed definition follows a cell's whole lifetime, so a cell a rover helped be born counts as farmed even if other cells later kept it alive.\n- Four seeds is still few, especially for glider rain.\n\n## What I'd try next\n\n- Remove the cap and let colonies compete for space in one world, mixed strategies.\n- Charge a small upkeep for staying still, to see whether the farmer still parks.\n- Let rovers share LIDAR scans, so a colony can map where the good farmland is.\n",
+   "summary": "Rovers stop being live cells, so the farmer has to find structures that feed it. A five-generation planner, a LIDAR that sees more when fed, and why seeing less helps.",
+   "body": "*Revised 30 September 2026.* In the first version of this entry, rovers were live cells. A parked rover counted as a neighbour, made cells grow next to it, and ate them, so most of what a \"farmer\" ate was food its own body had grown. That isn't the farming I was after. Now Life can't see rovers at all. A rover has to find structures that grow food on their own, and put itself where the food will turn up.\n\nIn [part 1.6](#/e/lidar-rover-hunts), the parked rover kept \"killing\" the same cells over and over, because its presence as a neighbour made them grow back. That gave me the idea of farming. This entry asks the question properly: without the rover's help, what in Life keeps producing food, and can a rover with nothing but a LIDAR find it?\n\n## The rules\n\n- **Rovers aren't live cells.** Life never counts a rover as a neighbour. Each generation a rover moves one square or stays, then eats the cell it's standing on if that cell is alive.\n- **Moving costs energy:** 1 per step by default. Staying still is free.\n- **Eating earns energy:** 10 per cell by default.\n- **At 100 energy, a rover splits.** A child appears in a free neighbouring square with 20 energy, enough to walk off and look for its own food, and the parent drops to 0.\n- **A well-fed rover sees more.** The LIDAR is a cone pointing the way the rover last moved. At 0 energy it's 90\u00b0 wide, and it widens with energy to the full 360\u00b0 at 100. Every rover also feels its eight neighbours, and a rover with nothing to do turns 45\u00b0 each generation to look around.\n- **Harvesting rovers broadcast a beacon.** Farmers within 6 squares hear it (it's radio, not LIDAR, so it works behind their backs) and keep off the eight squares around it.\n\nA rover with no energy can't wander, but it can still step onto a live cell next to it, because the meal pays for the step. Rovers can't share a square, and each one only knows what its own LIDAR sees. Colonies are capped at 40 rovers to keep the page fast; the rays, the yellow hits and the purple planned path belong to the first rover.\n\nA meal is **harvested** if the rover didn't move to get it: it stayed put and a cell was born in its square, delivered by the structures around it. A meal it stepped onto is **grazed**.\n\n```viz rover-farm\n```\n\n## A block is a farm\n\nThe best farm I've found is the most boring object in Life. A block is four cells in a 2 \u00d7 2 square, and it never changes. Eat one corner, and the other three cells still have two neighbours each, so they survive. The empty corner has exactly three, so it's born again next generation:\n\n```text\nblock      eat a corner      next generation\n # #           . #                # #\n # #           # #                # #\n```\n\nA rover sitting on that corner eats one cell every generation, forever, without moving. In my first test, a single block in an otherwise empty world fed a farmer for 600 generations and grew a colony of 40 rovers: the colony ate 597 cells, and 596 of them were harvested from that one block.\n\nSoup and glider collisions leave blocks lying around everywhere, along with other still lifes and oscillators. Not all of them survive a bite. A blinker, for example, dies if you eat the cell it's about to grow. The farmer's job is to tell the difference from what it can see.\n\n## Four strategies\n\n1. **Farmer:** runs Life five generations ahead on what its LIDAR saw, and plans the path that eats the most. It favours squares where cells keep being born, and only goes exploring when nothing in reach is worth anything and it can afford to.\n2. **Ambusher:** never pays to move. It eats whatever is born under it, or steps onto a live cell next to it.\n3. **Greedy eater:** eats anything under or next to it, otherwise pays to chase the nearest LIDAR hit.\n4. **Random walker:** moves at random whenever it can afford to. A baseline.\n\n## The math\n\n**Field of view.** With energy E, split threshold \u03b8 = 100, and the narrowest and widest views $\u03c6_{min}$ = 90\u00b0 and $\u03c6_{max}$ = 360\u00b0:\n\n```math\n\u03c6(E) = \u03c6_{min} + (\u03c6_{max} \u2212 \u03c6_{min}) \u00b7 min( E / \u03b8, 1 )\n```\n\nA beam fires if its direction is within \u03c6 / 2 of the rover's heading. Beams are 5\u00b0 apart, so a starving rover fires about 19 of its 72.\n\n**The energy budget.** Each rover has an energy counter E. With meal reward R, move cost $c_m$ and idle cost $c_i$:\n\n```math\nE_{t+1} = max( 0,  E_t + R \u00b7 \ud835\udfd9[ate]  \u2212  c_m \u00b7 \ud835\udfd9[moved]  \u2212  c_i )\nR = 10,   c_m = 1,   c_i = 0,   E = 50 for the first rover\n```\n\nA rover can never go into debt, so some moves aren't allowed:\n\n```math\nonto a live cell:      allowed if  E_t \u2212 c_m + R \u2265 0      (the meal pays for the step)\nonto an empty cell:    allowed if  E_t \u2265 c_m\nonto another rover:    never\n```\n\n**Splitting.** With a cap of 40 rovers:\n\n```math\nif E \u2265 \u03b8,  n \u003c 40  and a neighbouring square is free:    child there with E = 20,  parent E \u2190 0\nif n = 40:    E \u2190 min(E, \u03b8)\n```\n\n**The farmer's forecast.** The farmer copies what its LIDAR saw within 6 squares into a small grid $G_0$, counting unseen cells as empty, and runs Life on it for H = 5 generations. Every rover's square is emptied each generation, its own included, because a rover eats whatever is born under it:\n\n```math\nG_{t+1}(c) = L( G_t(c), N_t(c) )    for every cell c,    then    G_{t+1}(r) = 0    for every rover square r\n```\n\n**The plan.** A rover standing on q after generation t can move to any free neighbour q\u2032 or stay. Arriving eats whatever the forecast says is there. Staying only eats if a new cell is born, because the rover already ate the last one, and that needs exactly three live neighbours:\n\n```math\nreward(q \u2192 q\u2032, t+1) = R \u00b7 G_{t+1}(q\u2032) \u2212 c_m      if q\u2032 \u2260 q\nreward(q \u2192 q,  t+1) = R \u00b7 \ud835\udfd9[ N_t(q) = 3 ]        if it stays\n```\n\nIt works backwards from the horizon (backward induction, a small dynamic program), with discount \u03b3 = 0.9. At the horizon, a square where cells were born in each of the last two generations counts as a farm site, worth two more meals:\n\n```math\nV_H(q) = 2R \u00b7 \ud835\udfd9[ N_{H\u22121}(q) = 3  and  N_{H\u22122}(q) = 3 ]\nV_t(q) = max_{q\u2032 \u2208 {q} \u222a \ud835\udca9(q), q\u2032 free}   reward(q \u2192 q\u2032, t+1)  +  \u03b3 \u00b7 V_{t+1}(q\u2032)\n```\n\nThe first move is scored on what the LIDAR sees now, and only affordable moves count. Eating a cell changes the structure it belongs to, so every first move onto food gets its own forecast with that cell removed. That's how the farmer tells a block (eat a corner and it grows back) from a blinker (eat a cell and it dies):\n\n```math\nm\u22c6 = argmax_{affordable m}   R \u00b7 \ud835\udfd9[food at x + m]  \u2212  c_m \u00b7 \ud835\udfd9[m \u2260 0]  +  \u03b3 \u00b7 V_1(x + m)  +  \u03b5\n```\n\nIf the best plan is worth less than 0.5 and it has energy to spare, it explores: toward the nearest food it can see, or straight ahead if that's fenced off:\n\n```math\nif  V(m\u22c6) \u003c 0.5  and  E > 3 \u00b7 c_m + 5:     m\u22c6 = m_{toward}  or  m_{ahead}\n```\n\n**Fences.** A rover that harvested this generation broadcasts a beacon. To a farmer that hears it, the beacon's square and its eight neighbours are off limits. I added this after watching children eat the block that fed their parent: the two block cells nearest the child hid the other two from its LIDAR, so it had no way to tell the cell was part of a farm.\n\n**The other strategies** use the same energy rules and the same LIDAR, and stay put when a move isn't affordable:\n\n```math\nAmbusher:       m\u22c6 = (0, 0) if food is under it,  else a random neighbouring live cell,  else (0, 0)\nGreedy eater:   m\u22c6 = (0, 0) if food is under it,  else a random neighbouring live cell,  else m_{toward}\nRandom walker:  m\u22c6 ~ Uniform{ \u22121, 0, 1 }\u00b2\n```\n\n**The scores in the table:**\n\n```math\ncells eaten per 100 generations = (100 / T) \u00b7 \u03a3_t meals_t\nharvested share = ( meals eaten without moving ) / ( all meals )\nmeals per move = \u03a3_t meals_t / \u03a3_t moves_t\ncolony full = first t with n_t = 40\n```\n\n## Results\n\nSame setup as before: four seeded worlds per strategy, 1,000 generations each, on a 120 \u00d7 80 wrap-around grid, move cost 1, meal reward 10, field of view 90\u00b0 to 360\u00b0. \"Colony full\" is the average generation the colony reached 40 rovers. The benchmark button on the figure reruns exactly this, and the sliders let you change the costs and the narrowest view first.\n\n**Random soup:**\n\n| Strategy | Cells eaten per 100 gens | Harvested share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 1,195 | 95% | 4.88 | 40 | gen 138 |\n| Ambusher | 13 | 24% | 1.31 | 10.3 | never |\n| Greedy eater | 98 | 41% | 0.25 | 40 | gen 119 |\n| Random walker | 3 | 8% | 0.07 | 1.5 | never |\n\n**Glider rain:**\n\n| Strategy | Cells eaten per 100 gens | Harvested share | Meals per move | Rovers at gen 1,000 | Colony full |\n|---|---|---|---|---|---|\n| Farmer | 564 | 93% | 2.47 | 40 | gen 362 |\n| Ambusher | 4 | 21% | 1.42 | 4.0 | never |\n| Greedy eater | 45 | 29% | 0.18 | 27.3 | gen 681 (1 of 4 runs) |\n| Random walker | 2 | 12% | 0.09 | 1.0 | never |\n\n**How wide should the view be?** Farmer only, changing the narrowest view (the view at 0 energy). At 360\u00b0 the view never changes:\n\n| Narrowest view | Soup: cells eaten per 100 gens | Glider rain: cells eaten per 100 gens |\n|---|---|---|\n| 30\u00b0 | 1,443 | 454 |\n| 90\u00b0 | 1,195 | 564 |\n| 180\u00b0 | 1,247 | 565 |\n| 360\u00b0 | 769 | 260 |\n\n## What I think it means\n\n**Farming is now almost all the farmer does.** 95% of its meals in soup were harvested: it sat still and food was born into its square. Its meals per move are above 1 because most meals don't need a move at all. It eats about 12 times as much as the greedy eater, in both worlds.\n\n**Without their own bodies to farm with, the other strategies collapse.** In the first version, every strategy ended up farming by accident, because dozens of live rovers packed together made food grow around them. Now nobody gets that for free. The greedy eater still fills the colony in soup, but it eats whatever it finds, structures included, and then there's little left. The ambusher and the random walker barely grow at all.\n\n**Seeing less helps.** This was the surprise. A farmer that always sees 360\u00b0 eats about a third less in soup (769 against 1,195) and less than half as much in glider rain. It isn't that full-view farmers find fewer farms: children found one about as often either way (65% against 69% in soup). It's how long they stay. With a 90\u00b0 minimum, a harvesting streak lasted 89 generations on average; with 360\u00b0, 47. A farmer that sees everything keeps spotting a better meal nearby, walks over and grazes it, and a five-generation plan can't see that the farm it left would have fed it for hundreds more. A narrow view after each split works like patience. Tying vision to energy was meant as a reward for eating well; it turns out to be a good rule for other reasons too. It has limits, though: at 30\u00b0 the farmer does even better in soup but worse in glider rain, where food arrives from every direction.\n\n**Move cost matters less now.** Tripling the move cost to 3 cut the farmer to 891 cells per 100 generations and slowed the colony down (full at about gen 183 instead of 138). Most of its food doesn't need a move, so it rarely pays.\n\n## Caveats\n\n- The 40-rover cap shapes everything after the colony fills. These numbers compare harvesting rates at the cap more than growth.\n- The forecast is exact only for a rover that stays put. When the farmer plans a path, it models how its first meal changes the structures around it, but not the meals after that.\n- The fence is a rule I added after watching children wreck their parents' farms, not something the rovers learned.\n- Most children still get stuck. Once they've spent their 20 energy without finding a farm, they can't afford to move, and they wait for food to come to them.\n- Four seeds is still few, especially for glider rain.\n\n## What I'd try next\n\n- Let a child inherit its parent's LIDAR scan, so it knows where the farms are instead of walking around half blind.\n- Charge a small upkeep for staying still, to see whether farms are still worth it.\n- Catalogue which structures besides blocks survive being eaten, and which ones the farmers actually use.\n",
    "backdrop": {
     "effect": "rover",
     "variant": "farm-farmer"
@@ -1239,41 +1239,44 @@ function huntBenchmark(world, opts, onProgress, onDone) {
 }
 
 /* ---------- Farm: rovers with an energy budget ----------
-   Moving costs energy, eating a live cell (stepping onto it) earns energy, and a rover whose energy
-   reaches the split threshold divides: a child appears in a free neighbouring cell and both counters
-   reset. Rovers are immortal live cells. A rover that can't afford a move can still step onto food,
-   because the meal pays for the step. "Farmed" cells are cells that were born (or kept alive) only
-   because a rover was next to them; eating one of those is farming. */
+   Rovers are not live cells: Life never counts them as neighbours. Every generation each rover moves
+   (or stays), then eats the cell it is standing on if that cell is alive. Moving costs energy, eating
+   earns it, and a rover whose energy reaches the split threshold divides: a child appears in a free
+   neighbouring cell with a little energy to go and find food, and the parent's counter resets. A meal
+   is "harvested" when the rover stayed put and a cell was born under it: the structures around it grew
+   the food into its square. A rover that harvested this generation broadcasts a radio beacon, and
+   farmers within range keep off the eight squares around it, so they don't eat another rover's farm. Each rover's LIDAR is a
+   cone pointing the way it last moved, and the cone widens with its energy; every rover also feels its
+   eight neighbours. */
 var FARM_STRATEGIES = [
-  { id: 'farmer', name: 'Farmer', text: 'Scores each move by the energy it earns now plus the food it expects next to it next generation, counting the cells its own presence will create. Explores only when it can afford to.' },
-  { id: 'ambusher', name: 'Ambusher', text: 'Never pays to move. Waits until a live cell appears next to it, then eats it.' },
-  { id: 'greedy', name: 'Greedy eater', text: 'Eats any adjacent cell; otherwise pays to chase the nearest LIDAR hit.' },
+  { id: 'farmer', name: 'Farmer', text: 'Runs Life five generations ahead on what its LIDAR saw and plans the path that eats the most, favouring spots where the structures around it keep growing cells into the square it sits on. Explores only when it can afford to.' },
+  { id: 'ambusher', name: 'Ambusher', text: 'Never pays to move. Eats whatever is born under it, or steps onto a live cell next to it.' },
+  { id: 'greedy', name: 'Greedy eater', text: 'Eats any cell under or next to it; otherwise pays to chase the nearest LIDAR hit.' },
   { id: 'random', name: 'Random walker', text: 'Moves at random whenever it can afford to. A baseline.' }
 ];
-var FARM_DEFAULTS = { moveCost: 1, foodReward: 10, idleCost: 0, startEnergy: 50, splitAt: 100, resetTo: 0, maxRovers: 40 };
+var FARM_DEFAULTS = { moveCost: 1, foodReward: 10, idleCost: 0, startEnergy: 50, splitAt: 100, resetTo: 0, childEnergy: 20, maxRovers: 40, fovMin: 90, fovMax: 360 };
 function FarmSim(cols, rows, o) {
   var W = cols, H = rows, N = W * H, P = {};
   for (var k in FARM_DEFAULTS) P[k] = o[k] != null ? o[k] : FARM_DEFAULTS[k];
   this.P = P; this.W = W; this.H = H; this.world = o.world || 'soup'; this.strategy = o.strategy || 'farmer'; this.visual = o.visual !== false;
   this.RAYS = 72; this.RANGE = o.range || 20;
-  var a = new Uint8Array(N), b = new Uint8Array(N), sa = new Uint8Array(N), sb = new Uint8Array(N);
-  var farmed = new Uint8Array(N), made = new Uint8Array(N), rmap = new Uint8Array(N);
+  var a = new Uint8Array(N), b = new Uint8Array(N), rmap = new Uint8Array(N);   // rmap: 1 rover, 2 rover broadcasting its beacon
   function idx(x, y) { x %= W; if (x < 0) x += W; y %= H; if (y < 0) y += H; return y * W + x; }
-  this.idx = idx; this.cells = function () { return a; }; this.farmedFlags = function () { return farmed; };
+  this.idx = idx; this.cells = function () { return a; };
   var GL = [[1, 0], [2, 1], [0, 2], [1, 2], [2, 2]], RP = [[1, 0], [2, 0], [0, 1], [1, 1], [1, 2]];
-  function stampBoth(shape, x, y, fx, fy) { shape.forEach(function (c) { var i = idx(x + (fx ? 2 - c[0] : c[0]), y + (fy ? 2 - c[1] : c[1])); if (!rmap[i]) { a[i] = 1; } sa[i] = 1; }); }
+  function stamp(shape, x, y, fx, fy) { shape.forEach(function (c) { a[idx(x + (fx ? 2 - c[0] : c[0]), y + (fy ? 2 - c[1] : c[1]))] = 1; }); }
   this.reset = function (seed) {
     this.seed = seed == null ? (Math.random() * 1e9) | 0 : seed;
     this.rng = mulberry32(this.seed); this.brain = mulberry32(this.seed ^ 0x9E3779B9);
-    a.fill(0); sa.fill(0); farmed.fill(0); rmap.fill(0); this.gen = 0; this.events = [];
-    this.stats = { eaten: 0, farmedEaten: 0, moves: 0, spent: 0, splits: 0 };
-    if (this.world === 'soup') { for (var i = 0; i < N; i++) { var v = this.rng() < 0.2 ? 1 : 0; a[i] = v; sa[i] = v; } }
+    a.fill(0); rmap.fill(0); this.gen = 0; this.events = [];
+    this.stats = { eaten: 0, harvested: 0, moves: 0, spent: 0, splits: 0 };
+    if (this.world === 'soup') { for (var i = 0; i < N; i++) a[i] = this.rng() < 0.2 ? 1 : 0; }
     else for (var q = 0; q < Math.max(8, (N / 900) | 0); q++) this.spawn();
-    var r0 = { x: (W * (o.startX || 0.5)) | 0, y: (H * 0.5) | 0, e: P.startEnergy, hx: 1, hy: 0, age: 0 };
-    this.rovers = [r0]; a[idx(r0.x, r0.y)] = 1; rmap[idx(r0.x, r0.y)] = 1;
+    var r0 = { x: (W * (o.startX || 0.5)) | 0, y: (H * 0.5) | 0, e: P.startEnergy, face: 0, age: 0, plan: null };
+    this.rovers = [r0]; rmap[idx(r0.x, r0.y)] = 1;
   };
-  this.spawn = function () { var r = this.rng, x = (r() * W) | 0, y = (r() * H) | 0; stampBoth(GL, x, y, r() < 0.5, r() < 0.5); };
-  this.drop = function (x, y) { stampBoth(RP, x - 1, y - 1, false, false); };
+  this.spawn = function () { var r = this.rng, x = (r() * W) | 0, y = (r() * H) | 0; stamp(GL, x, y, r() < 0.5, r() < 0.5); };
+  this.drop = function (x, y) { stamp(RP, x - 1, y - 1, false, false); };
   function rule(alive, n) { return n === 3 || (alive && n === 2) ? 1 : 0; }
   function lifeStep(src, dst) {
     for (var y = 0; y < H; y++) { var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
@@ -1281,114 +1284,164 @@ function FarmSim(cols, rows, o) {
         var n = src[up + l] + src[up + x] + src[up + r] + src[md + l] + src[md + r] + src[dn + l] + src[dn + x] + src[dn + r];
         dst[md + x] = (n === 3 || (n === 2 && src[md + x] === 1)) ? 1 : 0; } }
   }
-  /* LIDAR for one rover: belief window of radius 3 (1 food, 2 another rover, 0 seen empty, -1 unseen) */
-  var R2 = 3, BW = 7, belief = new Int8Array(49), self = this;
-  function bel(dx, dy) { return (Math.abs(dx) > R2 || Math.abs(dy) > R2) ? -1 : belief[(dy + R2) * BW + dx + R2]; }
-  // precompute each beam's cell sequence once: [dx, dy, distance, ...] per ray
-  var RAYCELLS = [];
+  /* Field of view in degrees: the LIDAR cone widens linearly with energy, up to fovMax at the split threshold. */
+  this.fov = function (e) { return P.fovMin + (P.fovMax - P.fovMin) * Math.min(1, Math.max(0, e) / P.splitAt); };
+  /* LIDAR for one rover: belief window of radius 6 (1 food, 2 another rover, 0 seen empty, -1 unseen) */
+  var RB = 6, BW = 13, WN = BW * BW, CI = RB * BW + RB, belief = new Int8Array(WN);
+  function bel(dx, dy) { return (Math.abs(dx) > RB || Math.abs(dy) > RB) ? -1 : belief[(dy + RB) * BW + dx + RB]; }
+  // precompute each beam's direction and cell sequence once: [dx, dy, distance, ...] per ray
+  var RAYCELLS = [], RC = new Float32Array(72), RS = new Float32Array(72);
   for (var rk = 0; rk < 72; rk++) { var th0 = rk / 72 * Math.PI * 2, c0 = Math.cos(th0), s0 = Math.sin(th0), seq = [], plx = 0, ply = 0;
+    RC[rk] = c0; RS[rk] = s0;
     for (var t0 = 0.5; t0 <= this.RANGE; t0 += 0.35) { var qx = Math.round(c0 * t0), qy = Math.round(s0 * t0); if (qx === plx && qy === ply) continue; plx = qx; ply = qy; seq.push(qx, qy, t0); }
     RAYCELLS.push(seq); }
   this.scan = function (r, keep) {
-    belief.fill(-1); belief[R2 * BW + R2] = 0; var nearest = null; if (keep) { this.hitsXY = []; }
-    var rx = r.x, ry = r.y;
-    for (var k = 0; k < 72; k++) { var seq = RAYCELLS[k], hit = this.RANGE;
+    belief.fill(-1); var nearest = null, rx = r.x, ry = r.y; if (keep) { this.hitsXY = []; }
+    // touch: the cell under the rover and its eight neighbours are always known
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { var ni = idx(rx + i, ry + j);
+      belief[(j + RB) * BW + i + RB] = (i || j) && rmap[ni] ? 2 : a[ni]; }
+    var half = this.fov(r.e) * Math.PI / 360, full = half >= Math.PI - 1e-6, ch = Math.cos(half), fc = Math.cos(r.face), fs = Math.sin(r.face);
+    for (var k = 0; k < 72; k++) {
+      if (!full && RC[k] * fc + RS[k] * fs < ch - 1e-6) { if (keep) this.ranges[k] = 0; continue; }   // outside the cone
+      var seq = RAYCELLS[k], hit = this.RANGE;
       for (var q = 0; q < seq.length; q += 3) { var cx = seq[q], cy = seq[q + 1], X = rx + cx, Y = ry + cy;
         if (X < 0) X += W; else if (X >= W) X -= W; if (Y < 0) Y += H; else if (Y >= H) Y -= H;
-        var i = Y * W + X, live = a[i], v = live ? (rmap[i] ? 2 : 1) : 0;
-        if (cx <= R2 && cx >= -R2 && cy <= R2 && cy >= -R2) { var bi = (cy + R2) * BW + cx + R2; if (belief[bi] < 1) belief[bi] = v; }
-        if (live) { hit = seq[q + 2]; if (keep) this.hitsXY.push(X, Y); if (v === 1 && (!nearest || hit < nearest.t)) nearest = { dx: cx, dy: cy, t: hit }; break; } }
+        var ci = Y * W + X, v = rmap[ci] ? 2 : a[ci];
+        if (cx <= RB && cx >= -RB && cy <= RB && cy >= -RB) { var bi = (cy + RB) * BW + cx + RB; if (belief[bi] < v) belief[bi] = v; }
+        if (v) { hit = seq[q + 2]; if (keep) this.hitsXY.push(X, Y); if (v === 1 && (!nearest || hit < nearest.t)) nearest = { dx: cx, dy: cy, t: hit }; break; } }
       if (keep) this.ranges[k] = hit; }
     return nearest;
   };
   this.ranges = new Float32Array(72); this.hitsXY = [];
-  /* Food expected around (mx,my) next generation if the rover stands there (from the belief window). */
-  function foodNext(mx, my, moving) {
-    var nf = 0;
-    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
-      var cx = mx + i, cy = my + j, cur = bel(cx, cy); if (cur === 2 || cur === -1) continue;
-      if (cx === 0 && cy === 0) continue;
-      var n = 0;
-      for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) { if (!p && !q) continue;
-        var ux = cx + p, uy = cy + q;
-        if (ux === mx && uy === my) { n++; continue; }                 // the rover itself
-        if (ux === 0 && uy === 0) { if (!moving) n++; continue; }      // the rover's current cell
-        var v = bel(ux, uy); if (v >= 1) n++; }
-      var alive = cur === 1 && !(cx === mx && cy === my) ? 1 : 0;
-      nf += rule(alive, n); }
-    return nf;
+  /* The farmer's forecast: Life run PH generations ahead on the belief window, padded with a border of empty
+     cells (unseen cells count as empty too). G[t] is the predicted grid and NB[t] its neighbour counts. The
+     square the rover parks on, and every other rover's square, is emptied each generation, because a rover
+     that stays eats whatever is born under it. Other rovers' squares, and the fence around any beacon it
+     hears, are off limits. */
+  var PH = 5, GAMMA = 0.9, SITE = 2, FW = BW + 2, FN = FW * FW, FC = (RB + 1) * FW + RB + 1;
+  var G = [], NB = [], PICK = [], VA = new Float32Array(FN), VB = new Float32Array(FN), BASE = new Uint8Array(FN), BLOCK = new Uint8Array(FN), ROV = [];
+  for (var h0 = 0; h0 <= PH; h0++) { G.push(new Uint8Array(FN)); NB.push(new Uint8Array(FN)); PICK.push(new Int8Array(FN)); }
+  function loadBelief(r) {
+    BASE.fill(0); BLOCK.fill(0); ROV.length = 0;
+    for (var y = 0; y < BW; y++) for (var x = 0; x < BW; x++) { var v = belief[y * BW + x], f = (y + 1) * FW + x + 1;
+      if (v === 1) BASE[f] = 1; else if (v === 2) { BLOCK[f] = 1; ROV.push(f); }
+      // radio: beacons within the window are heard whether or not the LIDAR saw that rover
+      if ((x !== RB || y !== RB) && rmap[idx(r.x + x - RB, r.y + y - RB)] === 2) {
+        if (v !== 2) { BLOCK[f] = 1; ROV.push(f); }
+        for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) { var f2 = f + q * FW + p; if (f2 !== FC) BLOCK[f2] = 1; } } }
   }
-  this.decide = function (r, nearest) {
+  function forecast(park) {
+    var g = G[0], i, y, x;
+    g.set(BASE); g[park] = 0; for (i = 0; i < ROV.length; i++) g[ROV[i]] = 0;
+    for (var t = 0; t < PH; t++) { var src = G[t], dst = G[t + 1], nb = NB[t];
+      for (y = 1; y <= BW; y++) for (x = 1, i = y * FW + 1; x <= BW; x++, i++) {
+        var n = src[i - FW - 1] + src[i - FW] + src[i - FW + 1] + src[i - 1] + src[i + 1] + src[i + FW - 1] + src[i + FW] + src[i + FW + 1];
+        nb[i] = n; dst[i] = n === 3 || (n === 2 && src[i]) ? 1 : 0; }
+      dst[park] = 0; for (i = 0; i < ROV.length; i++) dst[ROV[i]] = 0; }
+  }
+  /* Backward induction over paths on the current forecast. V_t(q) is the discounted food still to come for a
+     rover standing on q after generation t. Arriving on q at t+1 eats G[t+1](q); staying eats a cell only if one
+     is born there (NB[t](q) = 3). At the horizon, a square where cells were born in each of the last two
+     generations is a farm site, worth SITE more meals. Returns V_1. */
+  function induct() {
+    var cost = P.moveCost, R = P.foodReward, Vn = VA, Vc = VB, x, y, kk, m, k2, v;
+    for (y = -PH; y <= PH; y++) for (x = -PH; x <= PH; x++) { kk = FC + y * FW + x;
+      Vn[kk] = NB[PH - 1][kk] === 3 && NB[PH - 2][kk] === 3 ? SITE * R : 0; }
+    for (var t = PH - 1; t >= 1; t--) {
+      for (y = -t; y <= t; y++) for (x = -t; x <= t; x++) { kk = FC + y * FW + x; var best = -1e9, pick = 4;
+        for (m = 0; m < 9; m++) { k2 = kk + (((m / 3) | 0) - 1) * FW + m % 3 - 1;
+          if (BLOCK[k2]) continue;
+          v = (m !== 4 ? (G[t + 1][k2] ? R : 0) - cost : (NB[t][k2] === 3 ? R : 0)) + GAMMA * Vn[k2];
+          if (v > best) { best = v; pick = m; } }
+        Vc[kk] = best; PICK[t][kk] = pick; }
+      var tmp = Vn; Vn = Vc; Vc = tmp; }
+    return Vn;
+  }
+  /* The first move. Staying and stepping onto empty squares share one forecast (the rover eats nothing it
+     didn't already see). Stepping onto food changes the world, so each of those gets its own forecast with that
+     cell eaten, which tells the farmer when a meal now would wreck a structure that could feed it for longer. */
+  function plan(r, rnd, keepPath) {
+    loadBelief(r);
+    forecast(FC); var cost = P.moveCost, R = P.foodReward, V1 = induct(), best = -1e9, m0 = 4, m, k1, v;
+    var foodMoves = [];
+    for (m = 0; m < 9; m++) { k1 = FC + (((m / 3) | 0) - 1) * FW + m % 3 - 1;
+      if (BLOCK[k1]) continue;
+      var moved = m !== 4, food = BASE[k1] === 1;
+      if (moved && (food ? r.e - cost + R < 0 : r.e < cost)) continue;
+      if (moved && food) { foodMoves.push(m); continue; }
+      v = (food ? R : 0) - (moved ? cost : 0) + GAMMA * V1[k1] + rnd() * 0.01;
+      if (v > best) { best = v; m0 = m; } }
+    for (var fi = 0; fi < foodMoves.length; fi++) { m = foodMoves[fi]; k1 = FC + (((m / 3) | 0) - 1) * FW + m % 3 - 1;
+      forecast(k1); v = R - cost + GAMMA * induct()[k1] + rnd() * 0.01;
+      if (v > best) { best = v; m0 = m; } }
+    var mx = m0 % 3 - 1, my = ((m0 / 3) | 0) - 1;
+    if (keepPath) {   // replay the chosen forecast so the drawn path matches the plan
+      forecast(m0 !== 4 && BASE[FC + my * FW + mx] ? FC + my * FW + mx : FC); induct();
+      var path = [r.x + mx, r.y + my], px = mx, py = my;
+      for (var t = 1; t < PH; t++) { var pk = PICK[t][FC + py * FW + px]; px += pk % 3 - 1; py += ((pk / 3) | 0) - 1; path.push(r.x + px, r.y + py); }
+      r.plan = path; }
+    return { m: [mx, my], v: best };
+  }
+  this.decide = function (r, nearest, keepPath) {
     var S = this.strategy, rnd = this.brain, cost = P.moveCost, R = P.foodReward;
-    function canMove(dx, dy) { var v = bel(dx, dy); if (v === 2) return false; return v === 1 ? r.e - cost + R >= 0 : r.e >= cost; }
+    function canMove(dx, dy) { var v = bel(dx, dy); if (v >= 2) return false; return v === 1 ? r.e - cost + R >= 0 : r.e >= cost; }
     var food = []; for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) if ((i || j) && bel(i, j) === 1) food.push([i, j]);
-    if (S === 'ambusher') return food.length ? food[(rnd() * food.length) | 0] : [0, 0];
+    var under = bel(0, 0) === 1;
+    if (S === 'ambusher') return under || !food.length ? [0, 0] : food[(rnd() * food.length) | 0];
     if (S === 'random') { var m = [((rnd() * 3) | 0) - 1, ((rnd() * 3) | 0) - 1]; return canMove(m[0], m[1]) ? m : [0, 0]; }
     var toward = null;
     if (nearest) toward = [Math.sign(nearest.dx), Math.sign(nearest.dy)];
-    else { if (rnd() < 0.05) { r.hx = ((rnd() * 3) | 0) - 1; r.hy = ((rnd() * 3) | 0) - 1; } toward = [r.hx, r.hy]; }
-    if (S === 'greedy') { if (food.length) return food[(rnd() * food.length) | 0]; return (toward[0] || toward[1]) && canMove(toward[0], toward[1]) ? toward : [0, 0]; }
-    // farmer: energy now + expected food next generation
-    var best = [0, 0], bestS = -1e9;
-    for (var y = -1; y <= 1; y++) for (var x = -1; x <= 1; x++) {
-      var moving = !!(x || y); if (moving && !canMove(x, y)) continue;
-      var now = (bel(x, y) === 1 ? R : 0) - (moving ? cost : 0);
-      var nf = foodNext(x, y, moving), next = nf > 0 ? (R - cost) * 0.9 + Math.min(nf - 1, 3) * 0.3 : 0;
-      var sc = now + next + rnd() * 0.01;
-      if (sc > bestS) { bestS = sc; best = [x, y]; } }
-    // nothing to farm nearby: explore toward food, but only while there is energy to spare
-    if (bestS < 0.5 && r.e > 3 * cost + 5 && (toward[0] || toward[1]) && canMove(toward[0], toward[1])) return toward;
-    return best;
+    else { if (rnd() < 0.05) r.face = rnd() * Math.PI * 2; toward = [Math.round(Math.cos(r.face)), Math.round(Math.sin(r.face))]; }
+    if (S === 'greedy') { if (under) return [0, 0]; if (food.length) return food[(rnd() * food.length) | 0]; return (toward[0] || toward[1]) && canMove(toward[0], toward[1]) ? toward : [0, 0]; }
+    // farmer: plan against the forecast; if nothing within reach is worth anything, explore while there is energy to spare
+    var p = plan(r, rnd, keepPath);
+    if (p.v < 0.5 && r.e > 3 * cost + 5) {
+      var ahead = [Math.round(Math.cos(r.face)), Math.round(Math.sin(r.face))], tries = [toward, ahead];
+      for (var ti = 0; ti < 2; ti++) { var d = tries[ti];
+        if ((d[0] || d[1]) && canMove(d[0], d[1]) && !BLOCK[FC + d[1] * FW + d[0]]) { if (keepPath) r.plan = null; return d; } } }
+    return p.m;
   };
   this.step = function () {
     var rs = this.rovers, now = this.visual ? performance.now() : 0, st = this.stats, cost = P.moveCost;
-    made.fill(0);
     // move rovers one at a time, in a shuffled order
     var order = rs.map(function (_, i) { return i; });
     for (var z = order.length - 1; z > 0; z--) { var w = (this.brain() * (z + 1)) | 0, t0 = order[z]; order[z] = order[w]; order[w] = t0; }
     for (var oi = 0; oi < order.length; oi++) {
-      var r = rs[order[oi]], nearest = this.scan(r, oi === 0 && this.visual && r === rs[0]);
-      if (r === rs[0] && this.visual && oi !== 0) this.scan(r, true);
-      var m = this.decide(r, nearest), ate = 0;
-      if (m[0] || m[1]) {
+      var r = rs[order[oi]], first = this.visual && r === rs[0], nearest = this.scan(r, first);
+      var m = this.decide(r, nearest, first), moved = !!(m[0] || m[1]);
+      if (moved) {
         var ti = idx(r.x + m[0], r.y + m[1]);
-        if (rmap[ti]) { m = [0, 0]; }
-        else {
-          a[idx(r.x, r.y)] = 0; rmap[idx(r.x, r.y)] = 0;
-          if (a[ti]) { ate = 1; st.eaten++; r.e += P.foodReward; if (farmed[ti]) st.farmedEaten++; if (this.visual) this.events.push({ x: ti % W, y: (ti / W) | 0, t: now, kind: farmed[ti] ? 'farmed' : 'direct' }); }
-          r.e -= cost; st.moves++; st.spent += cost;
-          r.x = ((r.x + m[0]) % W + W) % W; r.y = ((r.y + m[1]) % H + H) % H; a[ti] = 1; rmap[ti] = 1;
-        }
+        if (rmap[ti]) moved = false;
+        else { rmap[idx(r.x, r.y)] = 0; r.x = ti % W; r.y = (ti / W) | 0; rmap[ti] = 1; r.e -= cost; st.moves++; st.spent += cost; r.face = Math.atan2(m[1], m[0]); }
       }
-      r.e = Math.max(0, r.e - P.idleCost); r.ate = ate;
+      // eat the square it ends on: a cell it stepped onto (grazed) or one born under it while it stayed (harvested)
+      var ci = idx(r.x, r.y);
+      var ate = a[ci];
+      if (ate) { a[ci] = 0; r.e += P.foodReward; st.eaten++; if (!moved) st.harvested++;
+        if (this.visual) this.events.push({ x: r.x, y: r.y, t: now, kind: moved ? 'graze' : 'harvest' }); }
+      else if (!moved) r.face += Math.PI / 4;     // idle: sweep the LIDAR cone round to look elsewhere
+      rmap[ci] = ate && !moved ? 2 : 1;           // beacon on while harvesting
+      r.e = Math.max(0, r.e - P.idleCost);
     }
-    // cells each rover's presence creates (counterfactual: that rover's cell holds what was there before it arrived)
-    for (var ri = 0; ri < rs.length; ri++) { var R0 = rs[ri];
-      for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
-        var ci = idx(R0.x + i, R0.y + j); if (rmap[ci]) continue;
-        var n = 0; for (var q = -1; q <= 1; q++) for (var p = -1; p <= 1; p++) if (p || q) n += a[idx(R0.x + i + p, R0.y + j + q)];
-        if (!rule(a[ci], n - 1 + R0.ate) && rule(a[ci], n)) made[ci] = 1; } }
-    lifeStep(a, b);
-    for (var c = 0; c < N; c++) { if (rmap[c]) { b[c] = 1; farmed[c] = 0; } else farmed[c] = b[c] && (made[c] || (farmed[c] && a[c])) ? 1 : 0; }
-    var tt = a; a = b; b = tt;
-    lifeStep(sa, sb); tt = sa; sa = sb; sb = tt;
+    lifeStep(a, b); var tt = a; a = b; b = tt;
     this.gen++;
     if (this.world === 'glider-rain' && this.gen % 12 === 0) this.spawn();
-    // reproduction
+    // reproduction: the child goes to a free neighbouring square, preferring an empty one, and starts out facing its parent
     for (var k2 = 0, L = rs.length; k2 < L; k2++) { var pr = rs[k2];
       if (pr.e < P.splitAt) continue;
       if (rs.length >= P.maxRovers) { pr.e = P.splitAt; continue; }
-      var spots = []; for (var j2 = -1; j2 <= 1; j2++) for (var i2 = -1; i2 <= 1; i2++) { if (!i2 && !j2) continue; var si = idx(pr.x + i2, pr.y + j2); if (!a[si]) spots.push([i2, j2]); }
-      if (!spots.length) continue;
-      var sp = spots[(this.brain() * spots.length) | 0], cx2 = ((pr.x + sp[0]) % W + W) % W, cy2 = ((pr.y + sp[1]) % H + H) % H, ci2 = cy2 * W + cx2;
-      rs.push({ x: cx2, y: cy2, e: P.resetTo, hx: sp[0] || 1, hy: sp[1], age: 0 }); a[ci2] = 1; rmap[ci2] = 1; pr.e = P.resetTo; st.splits++;
+      var empty = [], free = [];
+      for (var j2 = -1; j2 <= 1; j2++) for (var i2 = -1; i2 <= 1; i2++) { if (!i2 && !j2) continue; var si = idx(pr.x + i2, pr.y + j2);
+        if (!rmap[si]) { free.push([i2, j2]); if (!a[si]) empty.push([i2, j2]); } }
+      var spots = empty.length ? empty : free; if (!spots.length) continue;
+      var sp = spots[(this.brain() * spots.length) | 0], ci2 = idx(pr.x + sp[0], pr.y + sp[1]);
+      rs.push({ x: ci2 % W, y: (ci2 / W) | 0, e: P.childEnergy, face: Math.atan2(-sp[1], -sp[0]), age: 0, plan: null }); rmap[ci2] = 1; pr.e = P.resetTo; st.splits++;
       if (rs.length >= P.maxRovers && st.fullAt == null) st.fullAt = this.gen;
-      if (this.visual) this.events.push({ x: cx2, y: cy2, t: now, kind: 'split' }); }
-    if (this.visual) { var pa = 0, ps = 0; for (var z2 = 0; z2 < N; z2++) { pa += a[z2]; ps += sa[z2]; } this.pop = pa - rs.length; this.twinPop = ps; }
+      if (this.visual) this.events.push({ x: ci2 % W, y: (ci2 / W) | 0, t: now, kind: 'split' }); }
     if (this.events.length > 300) this.events.splice(0, this.events.length - 300);
   };
   this.summary = function () { var g = Math.max(1, this.gen) / 100, s = this.stats, e = 0; this.rovers.forEach(function (r) { e += r.e; });
-    return { eaten: s.eaten / g, farmedShare: s.eaten ? s.farmedEaten / s.eaten : 0, moves: s.moves / g, splits: s.splits, rovers: this.rovers.length, energy: e / this.rovers.length,
+    return { eaten: s.eaten / g, harvestShare: s.eaten ? s.harvested / s.eaten : 0, moves: s.moves / g, splits: s.splits, rovers: this.rovers.length, energy: e / this.rovers.length,
              perMove: s.moves ? s.eaten / s.moves : 0, fullAt: s.fullAt == null ? null : s.fullAt }; };
   this.reset(o.seed);
 }
@@ -1401,17 +1454,17 @@ function farmBenchmark(world, params, opts, onProgress, onDone) {
     while (Date.now() - t0 < 25) {
       if (!sim) { if (j >= jobs.length) { onDone(res); return; }
         var o = { world: world, strategy: jobs[j].s, seed: jobs[j].seed, visual: false }; for (var k in params) o[k] = params[k];
-        sim = new FarmSim(opts.cols || 120, opts.rows || 80, o); trace = { rovers: [], eaten: [], farmed: [] }; }
+        sim = new FarmSim(opts.cols || 120, opts.rows || 80, o); trace = { rovers: [], eaten: [], harvest: [] }; }
       sim.step();
-      if (sim.gen % 10 === 0) { var st2 = sim.stats; trace.rovers.push(sim.rovers.length); trace.eaten.push(st2.eaten); trace.farmed.push(st2.eaten ? 100 * st2.farmedEaten / st2.eaten : 0); }
-      if (sim.gen >= gens) { var r = res[jobs[j].s] || (res[jobs[j].s] = { eaten: 0, farmedShare: 0, moves: 0, splits: 0, rovers: 0, perMove: 0, n: 0, full: [] }), p = sim.summary();
+      if (sim.gen % 10 === 0) { var st2 = sim.stats; trace.rovers.push(sim.rovers.length); trace.eaten.push(st2.eaten); trace.harvest.push(st2.eaten ? 100 * st2.harvested / st2.eaten : 0); }
+      if (sim.gen >= gens) { var r = res[jobs[j].s] || (res[jobs[j].s] = { eaten: 0, harvestShare: 0, moves: 0, splits: 0, rovers: 0, perMove: 0, n: 0, full: [] }), p = sim.summary();
         for (var key in r) if (key !== 'n' && key !== 'full' && key !== 'traces') r[key] += p[key]; r.full.push(p.fullAt); r.n++; (r.traces || (r.traces = [])).push(trace); sim = null; j++; onProgress(j / jobs.length); }
     }
     setTimeout(tick, 0);
   }
   tick(); return function () { cancelled = true; };
 }
-/* drawing: wild cells green, farmed cells blue, rovers white (dimmer when broke) */
+/* drawing: live cells green, rovers white (dimmer when low on energy), the first rover's LIDAR cone and planned path */
 function farmBuffers(sim) {
   var off = document.createElement('canvas'); off.width = sim.W; off.height = sim.H;
   var offCtx = off.getContext('2d'), img = offCtx.createImageData(sim.W, sim.H), LEb = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
@@ -1419,29 +1472,31 @@ function farmBuffers(sim) {
     for (var l = 0; l < 32; l++) { var al = l === 31 ? 0.78 : Math.pow(l / 31, 2) * 0.2;
       var r = Math.round(B[0] + (C[0] - B[0]) * al), g = Math.round(B[1] + (C[1] - B[1]) * al), bb = Math.round(B[2] + (C[2] - B[2]) * al);
       L[l] = LEb ? (255 << 24 | bb << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | bb << 8 | 255) >>> 0; } return L; }
-  return { off: off, offCtx: offCtx, img: img, px: new Uint32Array(img.data.buffer), trail: new Uint8Array(sim.W * sim.H), kind: new Uint8Array(sim.W * sim.H),
-           luts: [lutFor([111, 181, 125]), lutFor([116, 163, 227])] };
+  return { off: off, offCtx: offCtx, img: img, px: new Uint32Array(img.data.buffer), trail: new Uint8Array(sim.W * sim.H), lut: lutFor([111, 181, 125]) };
 }
 function drawFarm(sim, ctx, B, s) {
-  var W = sim.W, H = sim.H, cells = sim.cells(), fl = sim.farmedFlags(), px = B.px, tr = B.trail, kd = B.kind;
-  for (var i = 0; i < W * H; i++) { if (cells[i]) { tr[i] = 31; kd[i] = fl[i]; } else if (tr[i]) tr[i]--; px[i] = B.luts[kd[i]][tr[i]]; }
+  var W = sim.W, H = sim.H, cells = sim.cells(), px = B.px, tr = B.trail, lut = B.lut;
+  for (var i = 0; i < W * H; i++) { if (cells[i]) tr[i] = 31; else if (tr[i]) tr[i]--; px[i] = lut[tr[i]]; }
   B.offCtx.putImageData(B.img, 0, 0);
   ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, W * s, H * s); ctx.drawImage(B.off, 0, 0, W * s, H * s);
   var r0 = sim.rovers[0];
   if (r0) { var bx = (r0.x + 0.5) * s, by = (r0.y + 0.5) * s; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(116,163,227,0.13)'; ctx.beginPath();
-    for (var k = 0; k < 72; k++) { var th = k / 72 * Math.PI * 2, r = sim.ranges[k] * s; ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(th) * r, by + Math.sin(th) * r); }
-    ctx.stroke(); ctx.fillStyle = '#e6b85c'; for (var h = 0; h < sim.hitsXY.length; h += 2) ctx.fillRect(sim.hitsXY[h] * s, sim.hitsXY[h + 1] * s, s, s); }
+    for (var k = 0; k < 72; k++) { var r = sim.ranges[k] * s; if (!r) continue; var th = k / 72 * Math.PI * 2; ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(th) * r, by + Math.sin(th) * r); }
+    ctx.stroke(); ctx.fillStyle = '#e6b85c'; for (var h = 0; h < sim.hitsXY.length; h += 2) ctx.fillRect(sim.hitsXY[h] * s, sim.hitsXY[h + 1] * s, s, s);
+    if (r0.plan) { ctx.fillStyle = 'rgba(197,143,214,0.85)';   // planned path, unwrapped so it never jumps across the screen
+      for (var p = 0; p < r0.plan.length; p += 2) ctx.fillRect((r0.plan[p] + 0.3) * s, (r0.plan[p + 1] + 0.3) * s, s * 0.4, s * 0.4); } }
   sim.rovers.forEach(function (r) { var e = Math.min(1, r.e / sim.P.splitAt);
     ctx.fillStyle = 'rgba(247,245,238,' + (0.45 + 0.55 * e).toFixed(2) + ')'; ctx.fillRect(r.x * s - 1, r.y * s - 1, s + 2, s + 2); });
   var now = performance.now();
   sim.events = sim.events.filter(function (e) { var q = (now - e.t) / (e.kind === 'split' ? 1100 : 700); if (q > 1) return false;
-    ctx.strokeStyle = e.kind === 'split' ? 'rgba(247,245,238,' + (1 - q) + ')' : e.kind === 'farmed' ? 'rgba(116,163,227,' + (1 - q) + ')' : 'rgba(224,104,95,' + (1 - q) + ')';
+    ctx.strokeStyle = e.kind === 'split' ? 'rgba(247,245,238,' + (1 - q) + ')' : e.kind === 'harvest' ? 'rgba(116,163,227,' + (1 - q) + ')' : 'rgba(224,104,95,' + (1 - q) + ')';
     ctx.beginPath(); ctx.arc((e.x + 0.5) * s, (e.y + 0.5) * s, s * 0.8 + q * s * (e.kind === 'split' ? 7 : 3), 0, Math.PI * 2); ctx.stroke(); return true; });
 }
-function farmStatsText(sim) { var p = sim.summary();
+function farmStatsText(sim) { var p = sim.summary(), r0 = sim.rovers[0];
   return 'Generation ' + sim.gen.toLocaleString() + '. ' + p.rovers + ' rover' + (p.rovers === 1 ? '' : 's') + (p.rovers >= sim.P.maxRovers ? ' (colony full)' : '') +
-    ', ' + p.eaten.toFixed(0) + ' cells eaten per 100 generations, ' + Math.round(p.farmedShare * 100) + '% of them farmed, ' + p.perMove.toFixed(2) + ' meals per move.'; }
-var FARM_LEGEND = [{ color: '#f7f5ee', label: 'Rover (dimmer when low on energy)' }, { color: '#6fb57d', label: 'Wild cells' }, { color: '#74a3e3', label: 'Farmed cells (made by a rover)' }, { color: '#e0685f', label: 'Wild meal' }, { color: '#e6b85c', label: 'LIDAR hits (first rover)' }];
+    ', ' + p.eaten.toFixed(0) + ' cells eaten per 100 generations, ' + Math.round(p.harvestShare * 100) + '% of them harvested, ' + p.perMove.toFixed(2) + ' meals per move.' +
+    (r0 ? ' The first rover has ' + Math.round(r0.e) + ' energy and a ' + Math.round(sim.fov(r0.e)) + '° field of view.' : ''); }
+var FARM_LEGEND = [{ color: '#f7f5ee', label: 'Rover (dimmer when low on energy)' }, { color: '#6fb57d', label: 'Live cells' }, { color: '#74a3e3', label: 'Harvested meal (born under a parked rover)' }, { color: '#e0685f', label: 'Grazed meal (stepped onto)' }, { color: '#e6b85c', label: 'LIDAR hits (first rover)' }, { color: '#c58fd6', label: 'Farmer’s planned path (first rover)' }];
 
 /* ---------- LIDAR rover in the Game of Life (shared by the background effect and the figure) ---------- */
 function RoverSim(cols, rows, opts) {
@@ -1611,7 +1666,7 @@ Backdrop.register('rover', {
       if (farming()) {
         var fs = FARM_STRATEGIES.filter(function (x) { return 'farm-' + x.id === variant; })[0] || FARM_STRATEGIES[0];
         host.caption({ title: 'LIDAR rover colony: ' + fs.name, credit: 'click the background to drop in more food',
-          text: 'Moving costs ' + sim.P.moveCost + ' energy and eating a cell earns ' + sim.P.foodReward + '. At ' + sim.P.splitAt + ' energy a rover splits in two and both counters reset to zero. Rovers are immortal live cells, so they also make cells grow around them that they can then eat: that\u2019s farming. ' + fs.text + ' ' + farmStatsText(sim),
+          text: 'Rovers are not live cells: Life can\u2019t see them. Each generation a rover moves or stays, then eats the cell under it. Moving costs ' + sim.P.moveCost + ' energy and eating earns ' + sim.P.foodReward + '. At ' + sim.P.splitAt + ' energy a rover splits in two. A rover that parks where the structures around it keep growing cells into its square gets fed without moving: that\u2019s farming. Its LIDAR cone widens from ' + sim.P.fovMin + '\u00b0 to ' + sim.P.fovMax + '\u00b0 as its energy rises. ' + fs.text + ' ' + farmStatsText(sim),
           legend: FARM_LEGEND, actions: [{ id: 'reset', label: 'Reset the world' }] });
         return;
       }
@@ -1939,11 +1994,12 @@ VIZ['rover-farm'] = { mount: function (fig, visible) {
     '<label>World <select data-w><option value="soup">Random soup</option><option value="glider-rain">Glider rain</option></select></label>' +
     '<label>Move cost <input type="range" min="0" max="5" step="0.5" value="1" data-c> <output data-co>1</output></label>' +
     '<label>Meal reward <input type="range" min="1" max="20" step="1" value="10" data-f> <output data-fo>10</output></label>' +
+    '<label>Narrowest view <input type="range" min="30" max="360" step="30" value="90" data-v> <output data-vo>90°</output></label>' +
     '<button type="button" class="btn" data-r>Reset</button><button type="button" class="btn" data-b>Run benchmark</button>';
   var cap = vizCaption(fig, ''), table = document.createElement('div'); table.className = 'viz-table'; fig.appendChild(table);
   var q = function (sel) { return ctrl.querySelector(sel); }, sim, s, B, ctx = c.getContext('2d'), acc = 0, capT = 0, cancelBench = null, charts = [];
   var ro = new ResizeObserver(function () { charts.forEach(function (d) { d(); }); }); ro.observe(table);
-  function params() { return { moveCost: parseFloat(q('[data-c]').value), foodReward: parseFloat(q('[data-f]').value) }; }
+  function params() { return { moveCost: parseFloat(q('[data-c]').value), foodReward: parseFloat(q('[data-f]').value), fovMin: parseFloat(q('[data-v]').value) }; }
   function setup() { var w = wrap.clientWidth || 600; s = Math.max(4, Math.floor(w / 120)); var cols = Math.floor(w / s), rows = Math.round(cols * 0.55);
     c.width = cols * s; c.height = rows * s; c.style.width = cols * s + 'px'; c.style.height = rows * s + 'px';
     var o = { world: q('[data-w]').value, strategy: q('[data-s]').value }, p = params(); for (var k in p) o[k] = p[k];
@@ -1952,6 +2008,7 @@ VIZ['rover-farm'] = { mount: function (fig, visible) {
   q('[data-s]').onchange = setup; q('[data-w]').onchange = setup; q('[data-r]').onclick = setup;
   q('[data-c]').oninput = function () { q('[data-co]').textContent = this.value; setup(); };
   q('[data-f]').oninput = function () { q('[data-fo]').textContent = this.value; setup(); };
+  q('[data-v]').oninput = function () { q('[data-vo]').textContent = this.value + '°'; setup(); };
   c.addEventListener('pointerdown', function (ev) { var r = c.getBoundingClientRect(); sim.drop(Math.floor((ev.clientX - r.left) / s), Math.floor((ev.clientY - r.top) / s)); });
   q('[data-b]').onclick = function () {
     if (cancelBench) return; var btn = q('[data-b]'); btn.disabled = true; var world = q('[data-w]').value, p = params();
@@ -1960,9 +2017,9 @@ VIZ['rover-farm'] = { mount: function (fig, visible) {
       function (res) { cancelBench = null; btn.disabled = false;
         var rows = FARM_STRATEGIES.map(function (st) { var r = res[st.id], filled = r.full.filter(function (x) { return x != null; });
           var avg = filled.length ? Math.round(filled.reduce(function (x, y) { return x + y; }, 0) / filled.length) : null;
-          return '<tr><th scope="row">' + esc(st.name) + '</th><td>' + (r.eaten / r.n).toFixed(0) + '</td><td>' + Math.round(100 * r.farmedShare / r.n) + '%</td><td>' + (r.perMove / r.n).toFixed(2) + '</td><td>' + (r.rovers / r.n).toFixed(1) + '</td><td>' + (avg == null ? 'never' : 'gen ' + avg + (filled.length < r.n ? ' (' + filled.length + ' of ' + r.n + ' runs)' : '')) + '</td></tr>'; }).join('');
-        table.innerHTML = '<table><thead><tr><th></th><th>Cells eaten per 100 gens</th><th>Farmed share</th><th>Meals per move</th><th>Rovers at gen 1,000</th><th>Colony full (40)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-          '<p>' + (world === 'soup' ? 'Random soup' : 'Glider rain') + ', move cost ' + p.moveCost + ', meal reward ' + p.foodReward + ', split at 100 energy, 120 × 80 torus, 4 seeds × 1,000 generations.</p>';
+          return '<tr><th scope="row">' + esc(st.name) + '</th><td>' + (r.eaten / r.n).toFixed(0) + '</td><td>' + Math.round(100 * r.harvestShare / r.n) + '%</td><td>' + (r.perMove / r.n).toFixed(2) + '</td><td>' + (r.rovers / r.n).toFixed(1) + '</td><td>' + (avg == null ? 'never' : 'gen ' + avg + (filled.length < r.n ? ' (' + filled.length + ' of ' + r.n + ' runs)' : '')) + '</td></tr>'; }).join('');
+        table.innerHTML = '<table><thead><tr><th></th><th>Cells eaten per 100 gens</th><th>Harvested share</th><th>Meals per move</th><th>Rovers at gen 1,000</th><th>Colony full (40)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<p>' + (world === 'soup' ? 'Random soup' : 'Glider rain') + ', move cost ' + p.moveCost + ', meal reward ' + p.foodReward + ', field of view ' + p.fovMin + '° to 360°, split at 100 energy, 120 × 80 torus, 4 seeds × 1,000 generations.</p>';
         var names = FARM_STRATEGIES.map(function (st) { return st.name; }), avg = function (k) { return FARM_STRATEGIES.map(function (st) { return res[st.id][k] / res[st.id].n; }); };
         var lines = function (key) { return FARM_STRATEGIES.map(function (st) { var ag = aggregate(res[st.id].traces, key); return { name: st.name, color: STRAT_COLORS[st.id], mean: ag.mean, lo: ag.lo, hi: ag.hi }; }); };
         table.insertAdjacentHTML('beforeend', '<p class="chart-legend">' + FARM_STRATEGIES.map(function (st) { return '<span><i style="background:' + STRAT_COLORS[st.id] + '"></i>' + esc(st.name) + '</span>'; }).join('') + '</p>');
@@ -1970,8 +2027,8 @@ VIZ['rover-farm'] = { mount: function (fig, visible) {
         charts = [
           lineChart(grid, 'Colony size', 'Rovers alive. The colony is capped at 40.', lines('rovers'), 10),
           lineChart(grid, 'Cells eaten so far', 'Cumulative meals across the whole colony.', lines('eaten'), 10),
-          lineChart(grid, 'Farmed share of meals', 'Share of all meals so far that were cells a rover made grow.', lines('farmed'), 10, '%'),
-          barChart(grid, 'Meals per move', 'How often paying to move ends in a meal. The ambusher only moves to eat, so it is always 1.', names, [{ name: 'Meals per move', color: '#e6b85c', values: avg('perMove') }])
+          lineChart(grid, 'Harvested share of meals', 'Share of all meals so far that were born under a rover that stayed put.', lines('harvest'), 10, '%'),
+          barChart(grid, 'Meals per move', 'Meals divided by paid moves. Harvesting needs no move, so a rover that farms scores above 1.', names, [{ name: 'Meals per move', color: '#e6b85c', values: avg('perMove') }])
         ]; });
   };
   var stop = loop(visible, function (dt, t) {
