@@ -1,17 +1,17 @@
 {
- "updated": "2026-09-30T20:41:58.680Z",
+ "updated": "2026-09-30T20:47:06.298Z",
  "definition": {
   "minHarvests": 10,
   "maxGap": 16,
   "reach": 2
  },
  "totals": {
-  "runs": 44,
-  "generations": 66000,
-  "candidates": 1008,
-  "farmSessions": 994,
-  "surroundingsSessions": 14,
-  "surroundingsHarvests": 7187
+  "runs": 46,
+  "generations": 69000,
+  "candidates": 1060,
+  "farmSessions": 1044,
+  "surroundingsSessions": 16,
+  "surroundingsHarvests": 7210
  },
  "farms": [
   {
@@ -77,15 +77,15 @@
     "run": "508739da-glider-rain-farmer-s1-g1500"
    },
    "field": {
-    "sessions": 992,
-    "harvests": 642944,
+    "sessions": 1042,
+    "harvests": 672832,
     "longest": 1491,
     "worlds": {
-     "glider-rain": 543,
-     "soup": 449
+     "glider-rain": 569,
+     "soup": 473
     },
     "strategies": {
-     "farmer": 992
+     "farmer": 1042
     }
    }
   },
