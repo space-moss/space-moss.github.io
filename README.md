@@ -31,4 +31,8 @@ node tools/farm-log.js --watch --push           # also commit and push farms.jso
 node tools/farm-parse.js                        # rebuild farms.json from the logs you already have
 ```
 
-The live site only changes when `farms.json` is pushed, either by hand or with `--push`.
+The live site also updates by itself: `.github/workflows/spot-farms.yml` runs the logger on 4 new seeds per world every 6 hours, commits `farms.json` (and `farm-runs.json`, the list of runs already counted), and asks GitHub Pages to rebuild. You can also start it from the repository's **Actions** tab with **Run workflow**. The workflow pushes to `main`, so pull before you push your own changes.
+
+## Rover Colony
+
+`game.js` is a playable game built on the same world: you drive a rover, build children, and give them roles (farmer, scout, grazer, sentry). It opens from the **Play Rover Colony** button on the home page, or at `#/play`. It's separate from `index.html`, which only loads it and adds the button and the route. `GAME-DESIGN.md` explains the rules and lists roles, rule changes and modes to try next.

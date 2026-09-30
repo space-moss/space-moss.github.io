@@ -21,7 +21,7 @@ const path = require('path');
 const http = require('http');
 const { execFileSync } = require('child_process');
 const L = require('./farm-lib');
-const { parse, MIN_HARVESTS } = require('./farm-parse');
+const { parse, loadRuns, MIN_HARVESTS } = require('./farm-parse');
 
 const SNAP_RADIUS = 6, COLS = 120, ROWS = 80;
 
@@ -89,10 +89,12 @@ async function runOne(S, { world, seed, gens, strategy, out }) {
   return file;
 }
 
+/* Seeds already run: from the logs here, and from farm-runs.json (so a fresh checkout, like the GitHub Action, moves on to new seeds) */
 function usedSeeds(out, S, world, strategy, gens) {
-  const prefix = `${S.version}-${world}-${strategy}-s`;
-  if (!fs.existsSync(out)) return new Set();
-  return new Set(fs.readdirSync(out).filter((f) => f.startsWith(prefix) && f.endsWith(`-g${gens}.jsonl`)).map((f) => +f.slice(prefix.length).split('-')[0]));
+  const prefix = `${S.version}-${world}-${strategy}-s`, suffix = `-g${gens}`;
+  const ids = [...loadRuns(path.join(L.ROOT, 'farms.json'))];
+  if (fs.existsSync(out)) fs.readdirSync(out).filter((f) => f.endsWith('.jsonl')).forEach((f) => ids.push(f.slice(0, -6)));
+  return new Set(ids.filter((id) => id.startsWith(prefix) && id.endsWith(suffix)).map((id) => +id.slice(prefix.length, -suffix.length)));
 }
 function nextSeeds(o, S, world, n) {
   const used = usedSeeds(o.out, S, world, o.strategy, o.gens), seeds = [];
@@ -110,8 +112,8 @@ function report(created) {
 function pushFarms(created) {
   const rel = path.relative(L.ROOT, path.join(L.ROOT, 'farms.json'));
   try {
-    execFileSync('git', ['add', rel], { cwd: L.ROOT });
-    execFileSync('git', ['commit', '-m', 'Spot new farm' + (created.length > 1 ? 's' : '') + ': ' + [...new Set(created.map((f) => f.name))].join(', '), '--', rel], { cwd: L.ROOT, stdio: 'ignore' });
+    execFileSync('git', ['add', rel, 'farm-runs.json'], { cwd: L.ROOT });
+    execFileSync('git', ['commit', '-m', 'Spot new farm' + (created.length > 1 ? 's' : '') + ': ' + [...new Set(created.map((f) => f.name))].join(', '), '--', rel, 'farm-runs.json'], { cwd: L.ROOT, stdio: 'ignore' });
     execFileSync('git', ['push', '-q'], { cwd: L.ROOT });
     console.log('  pushed farms.json');
   } catch (e) { console.error('  push failed: ' + (e.stderr ? e.stderr.toString().trim() : e.message)); }

@@ -84,7 +84,18 @@ function nameStructure(cells, bite) {
 function emptyDb() {
   return { updated: null, definition: { minHarvests: MIN_HARVESTS, maxGap: MAX_GAP, reach: REACH },
            totals: { runs: 0, generations: 0, candidates: 0, farmSessions: 0, surroundingsSessions: 0, surroundingsHarvests: 0 },
-           runs: [], farms: [], catalogue: null };
+           farms: [], catalogue: null };
+}
+
+/* The ids of every run already merged live in farm-runs.json next to farms.json, not in farms.json itself:
+   the list only grows, and farms.html downloads farms.json every 15 seconds. */
+const runsFile = (out) => path.join(path.dirname(out), 'farm-runs.json');
+function loadRuns(out) {
+  const f = runsFile(out);
+  return new Set(fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')).runs : []);
+}
+function saveRuns(out, ids) {
+  fs.writeFileSync(runsFile(out), JSON.stringify({ note: 'Runs already merged into farms.json, so no run is counted twice.', runs: [...ids].sort() }, null, 1) + '\n');
 }
 
 function catalogue() {
@@ -92,13 +103,13 @@ function catalogue() {
 }
 
 /* Merge one parsed log into the database. Returns the farms it created. */
-function mergeRun(db, log, now) {
+function mergeRun(db, runs, log, now) {
   const { run, events } = log;
-  if (db.runs.some((r) => r.id === run.id)) return [];
+  if (runs.has(run.id)) return [];
   const end = events.find((e) => e.t === 'end');
   const snaps = events.filter((e) => e.t === 'snap');
   const created = [];
-  db.runs.push({ id: run.id, world: run.world, strategy: run.strategy, seed: run.seed, gens: end ? end.g : run.gens, sim: run.sim, at: run.at });
+  runs.add(run.id);
   db.totals.runs++; db.totals.generations += end ? end.g : 0;
   for (const s of sessionsOf(events)) {
     db.totals.candidates++;
@@ -141,12 +152,13 @@ function loadDb(file) {
 
 /* Parse logs into farms.json. Returns { db, created } where created lists farms seen for the first time. */
 function parse({ inputs = [path.join(L.ROOT, 'logs')], out = path.join(L.ROOT, 'farms.json') } = {}) {
-  const db = loadDb(out), now = new Date().toISOString(), created = [];
+  const db = loadDb(out), runs = loadRuns(out), now = new Date().toISOString(), created = [];
+  if (db.runs) { db.runs.forEach((r) => runs.add(r.id)); delete db.runs; }   // older farms.json kept the list inside
   if (!db.catalogue || db.catalogue.version !== CATALOGUE_VERSION) db.catalogue = catalogue();
   for (const file of listLogs(inputs)) {
     const log = readLog(file);
     if (!log.complete) continue;                       // a run still being written
-    created.push(...mergeRun(db, log, now));
+    created.push(...mergeRun(db, runs, log, now));
   }
   db.farms.sort((a, b) => b.field.harvests - a.field.harvests);
   // which farms each known object turned up in: on its own ("Block") or as part of one ("Blinker + Block")
@@ -156,10 +168,11 @@ function parse({ inputs = [path.join(L.ROOT, 'logs')], out = path.join(L.ROOT, '
   });
   db.updated = now;
   fs.writeFileSync(out, JSON.stringify(db, null, 1) + '\n');
+  saveRuns(out, runs);
   return { db, created };
 }
 
-module.exports = { parse, sessionsOf, structureOf, MIN_HARVESTS };
+module.exports = { parse, sessionsOf, structureOf, loadRuns, MIN_HARVESTS };
 
 if (require.main === module) {
   const argv = process.argv.slice(2), inputs = [];

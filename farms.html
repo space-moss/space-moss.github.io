@@ -109,7 +109,7 @@ footer{font-family:var(--sans);font-size:.88rem;color:var(--faint);border-top:1p
         <li>A parking session with at least <span data-def="minHarvests">10</span> harvests is a <strong>candidate</strong>. Its structure is everything connected to the live cells within <span data-def="reach">2</span> squares of the rover, from a snapshot taken at its 10th harvest. Neighbouring objects the feeding doesn’t need are removed.</li>
         <li>The structure is tested alone, with a rover parked on the same square and eating every generation. If it settles into a cycle with at least one meal in it, it’s a <strong>farm</strong>. Candidates that stop feeding on their own were fed by their surroundings, and are only counted.</li>
       </ol>
-      <p>To look for more farms, run the logger from the site folder. With <code>--serve</code> it also serves this page locally, so you can watch farms appear:</p>
+      <p>Every 6 hours a scheduled job runs the logger on seeds it hasn’t tried yet and republishes the data, and this page picks up anything new on its own. To search more yourself, run the logger from the site folder. With <code>--serve</code> it also serves this page locally, so you can watch farms appear:</p>
       <pre>node tools/farm-log.js --watch --serve 8080</pre>
     </div>
   </main>

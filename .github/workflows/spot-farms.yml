@@ -1,0 +1,51 @@
+# Looks for new farms every 6 hours: runs the farmer simulation on seeds it hasn't tried yet,
+# updates farms.json, and rebuilds the site so farms.html picks up anything new.
+# Run it by hand from the Actions tab with "Run workflow".
+name: Spot farms
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "New seeds to run in each world"
+        default: "4"
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: spot-farms
+  cancel-in-progress: false
+
+jobs:
+  spot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run the farmer on new seeds
+        run: node tools/farm-log.js --count "${{ github.event.inputs.count || '4' }}" | tee run.txt
+
+      - name: Commit farms.json and rebuild the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- farms.json farm-runs.json; then echo "Nothing changed."; exit 0; fi
+          NEW=$(grep -c "NEW FARM" run.txt || true)
+          if [ "$NEW" -gt 0 ]; then MSG="Spot $NEW new farm$([ "$NEW" -gt 1 ] && echo s)"; else MSG="Update farm stats"; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add farms.json farm-runs.json
+          git commit -m "$MSG"
+          git pull --rebase --quiet
+          git push
+          # pushes made with the workflow token don't always start a Pages build, so ask for one
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || echo "Couldn't request a Pages build; the next push will rebuild the site."
