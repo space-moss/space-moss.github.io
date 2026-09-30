@@ -1,3 +1,6 @@
 # Duplicate export copies (the site is index.html at the root)
 robotics-notebook/
 robotics-notebook.zip
+
+# Raw farm logs from tools/farm-log.js (farms.json is the published summary)
+logs/

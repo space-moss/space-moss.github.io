@@ -1,0 +1,1939 @@
+{
+ "updated": "2026-09-30T18:40:28.710Z",
+ "definition": {
+  "minHarvests": 10,
+  "maxGap": 16,
+  "reach": 2
+ },
+ "totals": {
+  "runs": 43,
+  "generations": 64500,
+  "candidates": 991,
+  "farmSessions": 977,
+  "surroundingsSessions": 14,
+  "surroundingsHarvests": 7187
+ },
+ "runs": [
+  {
+   "id": "508739da-glider-rain-farmer-s1-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 1,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:04.253Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s2-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 2,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:09.906Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s3-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 3,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:14.313Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s4-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 4,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:18.781Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s5-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 5,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:24.999Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s6-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 6,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:30.134Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s7-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 7,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:35.115Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s8-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 8,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:35:41.651Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s1-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 1,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:33:47.975Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s10-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 10,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:58.074Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s2-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 2,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:33:53.711Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s3-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 3,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:10.085Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s4-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 4,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:15.092Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s5-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 5,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:22.535Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s6-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 6,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:29.305Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s7-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 7,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:36.340Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s8-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 8,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:43.823Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s9-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 9,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:34:50.532Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s11-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 11,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:37:58.805Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s9-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 9,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:02.427Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s12-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 12,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:05.711Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s10-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 10,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:09.822Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s13-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 13,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:25.918Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s11-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 11,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:29.269Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s14-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 14,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:33.643Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s12-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 12,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:37.677Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s15-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 15,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:40.948Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s13-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 13,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:45.141Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s16-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 16,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:48.629Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s14-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 14,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:53.134Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s17-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 17,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:38:56.801Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s15-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 15,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:01.691Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s18-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 18,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:05.050Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s16-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 16,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:09.298Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s19-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 19,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:12.402Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s17-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 17,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:16.338Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s20-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 20,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:19.640Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s18-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 18,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:24.696Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s21-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 21,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:26.746Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s19-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 19,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:30.703Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s22-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 22,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:34.160Z"
+  },
+  {
+   "id": "508739da-glider-rain-farmer-s20-g1500",
+   "world": "glider-rain",
+   "strategy": "farmer",
+   "seed": 20,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:38.658Z"
+  },
+  {
+   "id": "508739da-soup-farmer-s23-g1500",
+   "world": "soup",
+   "strategy": "farmer",
+   "seed": 23,
+   "gens": 1500,
+   "sim": "508739da",
+   "at": "2026-09-30T18:39:41.522Z"
+  }
+ ],
+ "farms": [
+  {
+   "key": "b0,0|0,0;1,0;0,1;1,1",
+   "id": "f000",
+   "name": "Block",
+   "size": 4,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "bite": [
+    0,
+    0
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "Block",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-09-30T18:36:15.762Z",
+    "world": "glider-rain",
+    "strategy": "farmer",
+    "seed": 1,
+    "gen": 24,
+    "run": "508739da-glider-rain-farmer-s1-g1500"
+   },
+   "field": {
+    "sessions": 975,
+    "harvests": 624432,
+    "longest": 1491,
+    "worlds": {
+     "glider-rain": 543,
+     "soup": 432
+    },
+    "strategies": {
+     "farmer": 975
+    }
+   }
+  },
+  {
+   "key": "b1,2|0,0;1,0;0,1;1,1;1,2;1,4;2,4;3,4",
+   "id": "f001",
+   "name": "Blinker + Block",
+   "size": 8,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "bite": [
+    1,
+    2
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 0.5,
+    "period": 2,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "8-cell structure",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      4,
+      2
+     ],
+     [
+      3,
+      3
+     ],
+     [
+      4,
+      3
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-09-30T18:36:15.762Z",
+    "world": "soup",
+    "strategy": "farmer",
+    "seed": 10,
+    "gen": 426,
+    "run": "508739da-soup-farmer-s10-g1500"
+   },
+   "field": {
+    "sessions": 1,
+    "harvests": 537,
+    "longest": 1072,
+    "worlds": {
+     "soup": 1
+    },
+    "strategies": {
+     "farmer": 1
+    }
+   }
+  },
+  {
+   "key": "b1,1|2,0;3,0;1,1;3,1;0,2;2,2;0,3;1,3",
+   "id": "f002",
+   "name": "Long ship",
+   "size": 8,
+   "cells": [
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     1,
+     3
+    ]
+   ],
+   "bite": [
+    1,
+    1
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "Long ship",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-09-30T18:39:04.547Z",
+    "world": "glider-rain",
+    "strategy": "farmer",
+    "seed": 15,
+    "gen": 989,
+    "run": "508739da-glider-rain-farmer-s15-g1500"
+   },
+   "field": {
+    "sessions": 1,
+    "harvests": 15,
+    "longest": 15,
+    "worlds": {
+     "glider-rain": 1
+    },
+    "strategies": {
+     "farmer": 1
+    }
+   }
+  }
+ ],
+ "catalogue": {
+  "version": 1,
+  "objects": [
+   {
+    "name": "Block",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ]
+    ],
+    "bitesTried": 3,
+    "sustaining": [
+     {
+      "bite": [
+       0,
+       0
+      ],
+      "cells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "onCell": true,
+      "sustains": true,
+      "yield": 1,
+      "period": 1,
+      "mealsPerCycle": 1,
+      "settledAt": 0,
+      "becomes": "Block",
+      "becomesCells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     }
+    ],
+    "best": {
+     "bite": [
+      0,
+      0
+     ],
+     "cells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     "onCell": true,
+     "sustains": true,
+     "yield": 1,
+     "period": 1,
+     "mealsPerCycle": 1,
+     "settledAt": 0,
+     "becomes": "Block",
+     "becomesCells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ]
+    },
+    "spottedIn": [
+     "Block",
+     "Blinker + Block"
+    ]
+   },
+   {
+    "name": "Beehive",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      1,
+      3
+     ]
+    ],
+    "bitesTried": 8,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Loaf",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "bitesTried": 17,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Boat",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "bitesTried": 13,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Ship",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      2,
+      2
+     ]
+    ],
+    "bitesTried": 8,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Tub",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "bitesTried": 5,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Pond",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      3,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "bitesTried": 5,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Barge",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "bitesTried": 9,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Long boat",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "bitesTried": 17,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Long ship",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ],
+    "bitesTried": 10,
+    "sustaining": [
+     {
+      "bite": [
+       1,
+       1
+      ],
+      "cells": [
+       [
+        2,
+        0
+       ],
+       [
+        3,
+        0
+       ],
+       [
+        1,
+        1
+       ],
+       [
+        3,
+        1
+       ],
+       [
+        0,
+        2
+       ],
+       [
+        2,
+        2
+       ],
+       [
+        0,
+        3
+       ],
+       [
+        1,
+        3
+       ]
+      ],
+      "onCell": true,
+      "sustains": true,
+      "yield": 1,
+      "period": 1,
+      "mealsPerCycle": 1,
+      "settledAt": 0,
+      "becomes": "Long ship",
+      "becomesCells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        2,
+        1
+       ],
+       [
+        1,
+        2
+       ],
+       [
+        3,
+        2
+       ],
+       [
+        2,
+        3
+       ],
+       [
+        3,
+        3
+       ]
+      ]
+     }
+    ],
+    "best": {
+     "bite": [
+      1,
+      1
+     ],
+     "cells": [
+      [
+       2,
+       0
+      ],
+      [
+       3,
+       0
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       3,
+       1
+      ],
+      [
+       0,
+       2
+      ],
+      [
+       2,
+       2
+      ],
+      [
+       0,
+       3
+      ],
+      [
+       1,
+       3
+      ]
+     ],
+     "onCell": true,
+     "sustains": true,
+     "yield": 1,
+     "period": 1,
+     "mealsPerCycle": 1,
+     "settledAt": 0,
+     "becomes": "Long ship",
+     "becomesCells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       2,
+       1
+      ],
+      [
+       1,
+       2
+      ],
+      [
+       3,
+       2
+      ],
+      [
+       2,
+       3
+      ],
+      [
+       3,
+       3
+      ]
+     ]
+    },
+    "spottedIn": [
+     "Long ship"
+    ]
+   },
+   {
+    "name": "Long barge",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      4,
+      3
+     ],
+     [
+      3,
+      4
+     ]
+    ],
+    "bitesTried": 11,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Snake",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      0,
+      3
+     ],
+     [
+      1,
+      3
+     ]
+    ],
+    "bitesTried": 12,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Aircraft carrier",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ]
+    ],
+    "bitesTried": 13,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Eater 1",
+    "period": 1,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ],
+    "bitesTried": 28,
+    "sustaining": [
+     {
+      "bite": [
+       0,
+       1
+      ],
+      "cells": [
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ],
+       [
+        2,
+        1
+       ],
+       [
+        3,
+        2
+       ],
+       [
+        2,
+        3
+       ],
+       [
+        3,
+        3
+       ]
+      ],
+      "onCell": true,
+      "sustains": true,
+      "yield": 1,
+      "period": 1,
+      "mealsPerCycle": 1,
+      "settledAt": 2,
+      "becomes": "8-cell structure",
+      "becomesCells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        2,
+        1
+       ],
+       [
+        2,
+        2
+       ],
+       [
+        3,
+        2
+       ],
+       [
+        1,
+        3
+       ],
+       [
+        2,
+        3
+       ]
+      ]
+     }
+    ],
+    "best": {
+     "bite": [
+      0,
+      1
+     ],
+     "cells": [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       2,
+       1
+      ],
+      [
+       3,
+       2
+      ],
+      [
+       2,
+       3
+      ],
+      [
+       3,
+       3
+      ]
+     ],
+     "onCell": true,
+     "sustains": true,
+     "yield": 1,
+     "period": 1,
+     "mealsPerCycle": 1,
+     "settledAt": 2,
+     "becomes": "8-cell structure",
+     "becomesCells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       2,
+       1
+      ],
+      [
+       2,
+       2
+      ],
+      [
+       3,
+       2
+      ],
+      [
+       1,
+       3
+      ],
+      [
+       2,
+       3
+      ]
+     ]
+    },
+    "spottedIn": []
+   },
+   {
+    "name": "Mango",
+    "period": 1,
+    "cells": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      3,
+      3
+     ],
+     [
+      2,
+      4
+     ]
+    ],
+    "bitesTried": 17,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Blinker",
+    "period": 2,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      0,
+      2
+     ]
+    ],
+    "bitesTried": 6,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": [
+     "Blinker + Block"
+    ]
+   },
+   {
+    "name": "Toad",
+    "period": 2,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ],
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      1,
+      3
+     ]
+    ],
+    "bitesTried": 26,
+    "sustaining": [],
+    "best": null,
+    "spottedIn": []
+   },
+   {
+    "name": "Beacon",
+    "period": 2,
+    "cells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ],
+    "bitesTried": 18,
+    "sustaining": [
+     {
+      "bite": [
+       1,
+       1
+      ],
+      "cells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ],
+       [
+        2,
+        2
+       ],
+       [
+        3,
+        2
+       ],
+       [
+        2,
+        3
+       ],
+       [
+        3,
+        3
+       ]
+      ],
+      "onCell": true,
+      "sustains": true,
+      "yield": 1,
+      "period": 1,
+      "mealsPerCycle": 1,
+      "settledAt": 4,
+      "becomes": "Block",
+      "becomesCells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     {
+      "bite": [
+       1,
+       1
+      ],
+      "cells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        3,
+        2
+       ],
+       [
+        2,
+        3
+       ],
+       [
+        3,
+        3
+       ]
+      ],
+      "onCell": false,
+      "sustains": true,
+      "yield": 1,
+      "period": 1,
+      "mealsPerCycle": 1,
+      "settledAt": 5,
+      "becomes": "Block",
+      "becomesCells": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     }
+    ],
+    "best": {
+     "bite": [
+      1,
+      1
+     ],
+     "cells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ],
+      [
+       2,
+       2
+      ],
+      [
+       3,
+       2
+      ],
+      [
+       2,
+       3
+      ],
+      [
+       3,
+       3
+      ]
+     ],
+     "onCell": true,
+     "sustains": true,
+     "yield": 1,
+     "period": 1,
+     "mealsPerCycle": 1,
+     "settledAt": 4,
+     "becomes": "Block",
+     "becomesCells": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ],
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ]
+    },
+    "spottedIn": []
+   }
+  ]
+ }
+}

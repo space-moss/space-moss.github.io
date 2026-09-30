@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#262624">
+<meta name="description" content="Structures in Conway's Game of Life that feed a parked rover forever, spotted by the farmer rovers from the robotics notebook.">
+<title>Spotted farms</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root{
+  --bg:#262624; --panel:#2d2d2a; --raise:#34342f; --sunk:#1f1f1d;
+  --line:#3f3e39; --line-strong:#57554d;
+  --text:#f0eee6; --muted:#b1afa4; --faint:#85837a;
+  --green:#6fb57d; --blue:#74a3e3; --link:#9cbdf0; --rover:#f7f5ee; --gold:#e6b85c;
+  --serif:"Source Serif 4","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"Hanken Grotesk","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#262624; --text:#f0eee6; } }
+:root[data-theme="dark"]{ --bg:#262624; --text:#f0eee6; }
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--serif);font-size:1.075rem;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:.18em}
+:focus-visible{outline:2px solid var(--link);outline-offset:3px;border-radius:4px}
+.wrap{max-width:68rem;margin:0 auto;padding:0 clamp(1rem,4vw,3rem)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 0;font-family:var(--sans);font-size:.95rem}
+.brand{color:var(--text);text-decoration:none;font-weight:500}
+.brand:hover{text-decoration:underline}
+.live{display:inline-flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.85rem;border:1px solid var(--line-strong);border-radius:999px;padding:.35rem .8rem;white-space:nowrap}
+.dot{width:.5rem;height:.5rem;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(111,181,125,.6);animation:pulse 2.4s infinite}
+.live.off .dot{background:var(--faint);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(111,181,125,.55)}70%{box-shadow:0 0 0 .45rem rgba(111,181,125,0)}100%{box-shadow:0 0 0 0 rgba(111,181,125,0)}}
+header.hero{padding:clamp(2rem,7vh,4.5rem) 0 1.5rem}
+h1{font-weight:400;font-size:clamp(2.3rem,6vw,3.8rem);line-height:1.02;letter-spacing:-.02em;margin:0 0 1rem}
+.lede{color:var(--muted);max-width:40rem;margin:0}
+.stats{display:flex;flex-wrap:wrap;gap:.5rem 2.2rem;margin:2rem 0 0;padding:0;list-style:none;font-family:var(--sans)}
+.stats li{display:grid}
+.stats b{font-size:1.5rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text)}
+.stats span{font-size:.82rem;color:var(--faint)}
+h2{font-family:var(--sans);font-size:1rem;font-weight:600;margin:3rem 0 .4rem}
+.section-note{font-family:var(--sans);font-size:.9rem;color:var(--muted);margin:0 0 1.2rem;max-width:44rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.card.fresh{border-color:var(--blue);animation:arrive 1.2s ease}
+@keyframes arrive{from{transform:translateY(.6rem);opacity:0}to{transform:none;opacity:1}}
+.stage{background:var(--sunk);display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;border-bottom:1px solid var(--line)}
+.stage canvas{display:block;image-rendering:pixelated}
+.card-body{padding:.9rem 1rem 1rem;font-family:var(--sans);font-size:.88rem;color:var(--muted);display:grid;gap:.45rem}
+.card h3{font-family:var(--serif);font-size:1.3rem;font-weight:500;line-height:1.2;margin:0;color:var(--text)}
+.yield{color:var(--text)}
+.badge{position:absolute;top:.6rem;left:.6rem;font:600 .72rem var(--sans);letter-spacing:.04em;text-transform:uppercase;background:var(--blue);color:#15202e;border-radius:999px;padding:.2rem .55rem}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.tag{font-size:.76rem;color:var(--muted);border:1px solid var(--line-strong);border-radius:999px;padding:.08rem .5rem}
+.first{color:var(--faint);font-size:.8rem}
+.warn{color:var(--gold);font-size:.8rem}
+table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:.9rem}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+th,td{padding:.6rem .8rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+thead th{color:var(--faint);font-weight:500;font-size:.8rem;background:var(--sunk)}
+td.num{font-variant-numeric:tabular-nums}
+.mini{display:block;image-rendering:pixelated}
+.yes{color:var(--green)} .no{color:var(--faint)}
+.empty{font-family:var(--sans);color:var(--muted);border:1px dashed var(--line-strong);border-radius:12px;padding:1.5rem}
+.empty code,.howto code{font-family:var(--mono);font-size:.85em;background:var(--raise);border-radius:5px;padding:.1em .35em}
+.howto{font-family:var(--sans);font-size:.9rem;color:var(--muted);max-width:46rem}
+.howto pre{font-family:var(--mono);font-size:.84rem;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem;overflow-x:auto;color:var(--text)}
+.howto li{margin:.3rem 0}
+footer{font-family:var(--sans);font-size:.88rem;color:var(--faint);border-top:1px solid var(--line);margin-top:4rem;padding:2rem 0 3rem}
+#toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));transform:translate(-50%,1rem);background:var(--text);color:#1f1e1c;font:500 .92rem var(--sans);padding:.7rem 1.1rem;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 2rem);z-index:5}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:640px){ .bar .live .txt{display:none} .stats{gap:.5rem 1.5rem} }
+@media (prefers-reduced-motion: reduce){ .dot{animation:none} .card.fresh{animation:none} #toast{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a class="brand" href="./">Shyam Vaidyanathan</a>
+    <span class="live off" id="live" title="This page checks for new farms every 15 seconds"><span class="dot" aria-hidden="true"></span><span class="txt" id="live-text">Connecting…</span></span>
+  </div>
+
+  <header class="hero">
+    <h1>Spotted farms</h1>
+    <p class="lede">Structures in Conway’s Game of Life that feed a parked rover forever. They were found by the farmer rovers from <a href="./#/e/lidar-rover-farms">LIDAR, part 1.7</a>, logged by a tool that runs the same simulation offline, and checked in isolation before they count. This page updates itself when the tool spots a new one.</p>
+    <ul class="stats" id="stats" aria-live="polite"></ul>
+  </header>
+
+  <main>
+    <h2>Farms the rovers use</h2>
+    <p class="section-note">Each one is shown on its own, looping forever: green cells, the rover as a white square, and a blue ring every time a cell is born under it. Most used first.</p>
+    <div class="grid" id="farms"></div>
+
+    <h2>Which structures survive being eaten</h2>
+    <p class="section-note" id="cat-note">Every common still life and oscillator, with a rover parked on every square on or next to it, in every phase. “Feeds forever” means at least one of those squares keeps delivering food after the structure settles.</p>
+    <div class="table-wrap"><table id="catalogue"><thead><tr><th scope="col">Object</th><th scope="col">Shape</th><th scope="col">Feeds forever</th><th scope="col">Squares that work</th><th scope="col">What it settles into</th><th scope="col">Used by farmers</th></tr></thead><tbody></tbody></table></div>
+
+    <h2>How a farm is counted</h2>
+    <div class="howto" id="howto">
+      <ol>
+        <li>A rover <strong>parks</strong> when it eats on one square several times in a row without moving. Every meal after the first has to be a cell born under it.</li>
+        <li>A parking session with at least <span data-def="minHarvests">10</span> harvests is a <strong>candidate</strong>. Its structure is everything connected to the live cells within <span data-def="reach">2</span> squares of the rover, from a snapshot taken at its 10th harvest. Neighbouring objects the feeding doesn’t need are removed.</li>
+        <li>The structure is tested alone, with a rover parked on the same square and eating every generation. If it settles into a cycle with at least one meal in it, it’s a <strong>farm</strong>. Candidates that stop feeding on their own were fed by their surroundings, and are only counted.</li>
+      </ol>
+      <p>To look for more farms, run the logger from the site folder. With <code>--serve</code> it also serves this page locally, so you can watch farms appear:</p>
+      <pre>node tools/farm-log.js --watch --serve 8080</pre>
+    </div>
+  </main>
+
+  <footer>Data: <a href="farms.json">farms.json</a> · <span id="updated">not loaded yet</span></footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+var POLL_MS = 15000;
+var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+var known = null, lastUpdated = null, anims = [], fresh = {};
+var $ = function (s) { return document.querySelector(s); };
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function fmt(n) { return Number(n).toLocaleString('en-GB'); }
+function plural(n, one, many) { return fmt(n) + ' ' + (n === 1 ? one : (many || one + 's')); }
+function worldName(w) { return w === 'glider-rain' ? 'glider rain' : w; }
+function when(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function ago(iso) { var s = Math.round((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return 'just now'; if (s < 3600) return plural(Math.round(s / 60), 'minute') + ' ago'; if (s < 86400) return plural(Math.round(s / 3600), 'hour') + ' ago'; return 'on ' + when(iso); }
+function feeds(lab) { return lab.mealsPerCycle === 1 && lab.period === 1 ? '1 meal every generation' : plural(lab.mealsPerCycle, 'meal') + ' every ' + (lab.period === 1 ? 'generation' : plural(lab.period, 'generation')); }
+
+/* ---------- tiny Life on a set, with a rover that eats the square it's parked on ---------- */
+var SP = 4096, OFF = 2048;
+function enc(x, y) { return (x + OFF) * SP + (y + OFF); }
+function step(live) { var cnt = new Map(), next = new Set();
+  live.forEach(function (k) { for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) { if (!dx && !dy) continue; var n = k + dx * SP + dy; cnt.set(n, (cnt.get(n) || 0) + 1); } });
+  cnt.forEach(function (n, k) { if (n === 3 || (n === 2 && live.has(k))) next.add(k); }); return next; }
+
+function box(cellsLists, bite) { var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  cellsLists.forEach(function (cells) { cells.forEach(function (c) { x0 = Math.min(x0, c[0]); y0 = Math.min(y0, c[1]); x1 = Math.max(x1, c[0]); y1 = Math.max(y1, c[1]); }); });
+  if (bite) { x0 = Math.min(x0, bite[0]); y0 = Math.min(y0, bite[1]); x1 = Math.max(x1, bite[0]); y1 = Math.max(y1, bite[1]); }
+  return { x0: x0 - 1, y0: y0 - 1, w: x1 - x0 + 3, h: y1 - y0 + 3 }; }
+
+function farmAnim(canvas, farm) {
+  var b = box([farm.cells, farm.lab.becomesCells || []], farm.bite), host = canvas.parentNode;
+  var scale = Math.max(6, Math.floor(Math.min(host.clientWidth * 0.8 / b.w, host.clientHeight * 0.8 / b.h)) || 12);
+  var dpr = window.devicePixelRatio || 1, ctx = canvas.getContext('2d');
+  canvas.width = b.w * scale * dpr; canvas.height = b.h * scale * dpr; canvas.style.width = b.w * scale + 'px'; canvas.style.height = b.h * scale + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var live, gen, ring = 0, bk = enc(farm.bite[0], farm.bite[1]);
+  function reset() { live = new Set(farm.cells.map(function (c) { return enc(c[0], c[1]); })); gen = 0; }
+  function draw() {
+    ctx.clearRect(0, 0, b.w * scale, b.h * scale);
+    ctx.fillStyle = 'rgba(240,238,230,0.05)';
+    for (var gx = 0; gx < b.w; gx++) for (var gy = 0; gy < b.h; gy++) ctx.fillRect(gx * scale + scale / 2 - 0.5, gy * scale + scale / 2 - 0.5, 1, 1);
+    ctx.fillStyle = '#6fb57d';
+    live.forEach(function (k) { var x = Math.floor(k / SP) - OFF - b.x0, y = (k % SP) - OFF - b.y0; ctx.fillRect(x * scale + 1, y * scale + 1, scale - 2, scale - 2); });
+    var rx = (farm.bite[0] - b.x0) * scale, ry = (farm.bite[1] - b.y0) * scale;
+    ctx.strokeStyle = '#f7f5ee'; ctx.lineWidth = Math.max(2, scale / 6); ctx.strokeRect(rx + ctx.lineWidth / 2, ry + ctx.lineWidth / 2, scale - ctx.lineWidth, scale - ctx.lineWidth);
+    if (ring > 0) { ctx.strokeStyle = 'rgba(116,163,227,' + ring.toFixed(2) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(rx + scale / 2, ry + scale / 2, scale * (1.6 - ring * 0.8), 0, Math.PI * 2); ctx.stroke(); }
+  }
+  // one generation: the rover eats the square it's on (if alive), then Life steps
+  function tick() { if (live.has(bk)) { live.delete(bk); ring = 1; } live = step(live); if (++gen > 400) reset(); }
+  reset(); draw();
+  canvas.setAttribute('aria-label', farm.name + ': a rover parked beside it gets ' + feeds(farm.lab) + '.');
+  return { tick: tick, draw: draw, fade: function (dt) { ring = Math.max(0, ring - dt * 2.2); } };
+}
+
+function miniShape(cells, bite) {
+  var b = box([cells], bite), s = 7, c = document.createElement('canvas'), ctx = c.getContext('2d'), dpr = window.devicePixelRatio || 1;
+  c.width = b.w * s * dpr; c.height = b.h * s * dpr; c.style.width = b.w * s + 'px'; c.style.height = b.h * s + 'px'; c.className = 'mini';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#6fb57d';
+  cells.forEach(function (p) { ctx.fillRect((p[0] - b.x0) * s + 0.5, (p[1] - b.y0) * s + 0.5, s - 1, s - 1); });
+  if (bite) { ctx.strokeStyle = '#f7f5ee'; ctx.lineWidth = 1.5; ctx.strokeRect((bite[0] - b.x0) * s + 0.75, (bite[1] - b.y0) * s + 0.75, s - 1.5, s - 1.5); }
+  return c;
+}
+
+/* ---------- render ---------- */
+function renderStats(db) {
+  var t = db.totals, harvests = db.farms.reduce(function (a, f) { return a + f.field.harvests; }, 0);
+  $('#stats').innerHTML = [[db.farms.length, 'farm structures'], [t.runs, 'simulation runs'], [t.generations, 'generations simulated'], [t.farmSessions, 'farming sessions'], [harvests, 'harvested meals']]
+    .map(function (s) { return '<li><b>' + fmt(s[0]) + '</b><span>' + s[1] + '</span></li>'; }).join('');
+}
+
+function renderFarms(db) {
+  anims = [];
+  var grid = $('#farms');
+  if (!db.farms.length) { grid.innerHTML = '<p class="empty">No farms spotted yet. Run <code>node tools/farm-log.js</code> to look for some.</p>'; return; }
+  grid.innerHTML = '';
+  db.farms.forEach(function (f) {
+    var F = f.field, worlds = Object.keys(F.worlds).map(function (w) { return '<span class="tag">' + esc(worldName(w)) + ' · ' + fmt(F.worlds[w]) + '</span>'; }).join('');
+    var card = document.createElement('article'); card.className = 'card' + (fresh[f.key] ? ' fresh' : '');
+    card.innerHTML = (fresh[f.key] ? '<span class="badge">New</span>' : '') +
+      '<div class="stage"><canvas role="img"></canvas></div>' +
+      '<div class="card-body"><h3>' + esc(f.name) + '</h3>' +
+      '<div class="yield">Feeds ' + feeds(f.lab) + '</div>' +
+      '<div>' + plural(f.size, 'cell') + ' · used ' + plural(F.sessions, 'time') + ' · ' + plural(F.harvests, 'harvest') + ' · longest stay ' + plural(F.longest, 'generation') + '</div>' +
+      '<div class="tags">' + worlds + '</div>' +
+      (f.partial ? '<div class="warn">Bigger than the logged snapshot, so this may be only part of it.</div>' : '') +
+      '<div class="first">First spotted ' + esc(when(f.firstSpotted.at)) + ' in ' + esc(worldName(f.firstSpotted.world)) + ', seed ' + esc(f.firstSpotted.seed) + ', generation ' + fmt(f.firstSpotted.gen) + '</div></div>';
+    grid.appendChild(card);
+    anims.push(farmAnim(card.querySelector('canvas'), f));
+  });
+}
+
+/* "Yes" when farmers farmed the object itself; otherwise name the farms it was part of */
+function used(o) {
+  var farms = o.spottedIn || [];
+  if (farms.indexOf(o.name) >= 0) return '<span class="yes">Yes</span>';
+  if (farms.length) return 'As part of ' + farms.map(esc).join(', ');
+  return '<span class="no">Not yet</span>';
+}
+
+function renderCatalogue(db) {
+  var body = $('#catalogue tbody'), rows = (db.catalogue && db.catalogue.objects) || [];
+  body.innerHTML = '';
+  rows.slice().sort(function (a, b) { return (b.best ? 1 : 0) - (a.best ? 1 : 0) || a.name.localeCompare(b.name); }).forEach(function (o) {
+    var tr = document.createElement('tr'), best = o.best;
+    tr.innerHTML = '<th scope="row">' + esc(o.name) + (o.period > 1 ? ' <span class="no">(period ' + o.period + ')</span>' : '') + '</th><td></td>' +
+      '<td>' + (best ? '<span class="yes">Yes</span>, ' + feeds(best) : '<span class="no">No</span>') + '</td>' +
+      '<td class="num">' + o.sustaining.length + ' of ' + o.bitesTried + '</td>' +
+      '<td>' + (best ? esc(best.becomes) : '<span class="no">nothing that feeds it</span>') + '</td>' +
+      '<td>' + used(o) + '</td>';
+    tr.children[1].appendChild(best ? miniShape(best.cells, best.bite) : miniShape(o.cells, null));
+    body.appendChild(tr);
+  });
+}
+
+function setLive(ok, text) { $('#live').classList.toggle('off', !ok); $('#live-text').textContent = text; }
+
+function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(function () { t.classList.remove('show'); }, 6000); }
+
+function load() {
+  return fetch('farms.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (db) {
+    setLive(true, 'Watching for new farms');
+    $('#updated').textContent = 'updated ' + ago(db.updated);
+    if (db.updated === lastUpdated) return;
+    lastUpdated = db.updated;
+    var keys = db.farms.map(function (f) { return f.key; });
+    if (known) { var added = db.farms.filter(function (f) { return known.indexOf(f.key) < 0; });
+      added.forEach(function (f) { fresh[f.key] = true; });
+      if (added.length) toast('New farm spotted: ' + added.map(function (f) { return f.name; }).join(', ')); }
+    known = keys;
+    document.querySelectorAll('[data-def]').forEach(function (el) { var v = db.definition && db.definition[el.getAttribute('data-def')]; if (v != null) el.textContent = v; });
+    renderStats(db); renderFarms(db); renderCatalogue(db);
+  }).catch(function () {
+    setLive(false, 'Can’t reach farms.json');
+    if (!known) $('#farms').innerHTML = '<p class="empty">Couldn’t load <code>farms.json</code>. If you opened this file straight from disk, run <code>node tools/farm-log.js --serve</code> in the site folder and open <code>http://127.0.0.1:8080/farms.html</code> instead.</p>';
+  });
+}
+
+/* animation: about 4 generations a second; still frames when motion is reduced */
+var last = 0, acc = 0;
+function frame(t) {
+  requestAnimationFrame(frame);
+  var dt = Math.min(0.1, (t - last) / 1000 || 0); last = t;
+  if (REDUCED) return;
+  acc += dt * 4; var n = Math.floor(acc); acc -= n;
+  anims.forEach(function (a) { for (var i = 0; i < n; i++) a.tick(); a.fade(dt); a.draw(); });
+}
+requestAnimationFrame(frame);
+load();
+setInterval(function () { if (!document.hidden) load(); }, POLL_MS);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) load(); });
+})();
+</script>
+</body>
+</html>
