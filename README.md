@@ -28,7 +28,8 @@ node tools/farm-log.js                          # 8 new seeds in each world, 1,5
 node tools/farm-log.js --world soup --seeds 1-20 --gens 3000
 node tools/farm-log.js --watch --serve 8080     # keep searching; watch http://127.0.0.1:8080/farms.html update live
 node tools/farm-log.js --watch --push           # also commit and push farms.json whenever a new farm is spotted
-node tools/farm-parse.js                        # rebuild farms.json from the logs you already have
+node tools/farm-parse.js                        # merge any new logs into farms.json
+node tools/farm-parse.js --rebuild              # recount everything from the logs, keeping ids and first-spotted dates
 ```
 
 The live site also updates by itself: `.github/workflows/spot-farms.yml` runs the logger on 4 new seeds per world every 6 hours, commits `farms.json` (and `farm-runs.json`, the list of runs already counted), and asks GitHub Pages to rebuild. You can also start it from the repository's **Actions** tab with **Run workflow**. The workflow pushes to `main`, so pull before you push your own changes.

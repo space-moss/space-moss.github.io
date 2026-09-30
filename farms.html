@@ -54,6 +54,10 @@ h2{font-family:var(--sans);font-size:1rem;font-weight:600;margin:3rem 0 .4rem}
 .card-body{padding:.9rem 1rem 1rem;font-family:var(--sans);font-size:.88rem;color:var(--muted);display:grid;gap:.45rem}
 .card h3{font-family:var(--serif);font-size:1.3rem;font-weight:500;line-height:1.2;margin:0;color:var(--text)}
 .yield{color:var(--text)}
+.spotted{position:absolute;top:.6rem;right:.6rem;display:grid;justify-items:end;font-family:var(--sans);line-height:1.1;text-align:right;
+  background:rgba(31,31,29,.85);border:1px solid var(--line-strong);border-radius:10px;padding:.35rem .6rem}
+.spotted b{font-size:1.35rem;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.spotted span{font-size:.72rem;color:var(--faint)}
 .badge{position:absolute;top:.6rem;left:.6rem;font:600 .72rem var(--sans);letter-spacing:.04em;text-transform:uppercase;background:var(--blue);color:#15202e;border-radius:999px;padding:.2rem .55rem}
 .tags{display:flex;flex-wrap:wrap;gap:.3rem}
 .tag{font-size:.76rem;color:var(--muted);border:1px solid var(--line-strong);border-radius:999px;padding:.08rem .5rem}
@@ -108,6 +112,7 @@ footer{font-family:var(--sans);font-size:.88rem;color:var(--faint);border-top:1p
         <li>A rover <strong>parks</strong> when it eats on one square several times in a row without moving. Every meal after the first has to be a cell born under it.</li>
         <li>A parking session with at least <span data-def="minHarvests">10</span> harvests is a <strong>candidate</strong>. Its structure is everything connected to the live cells within <span data-def="reach">2</span> squares of the rover, from a snapshot taken at its 10th harvest. Neighbouring objects the feeding doesn’t need are removed.</li>
         <li>The structure is tested alone, with a rover parked on the same square and eating every generation. If it settles into a cycle with at least one meal in it, it’s a <strong>farm</strong>. Candidates that stop feeding on their own were fed by their surroundings, and are only counted.</li>
+        <li>Each farm’s <strong>spotted</strong> count is the number of distinct places it turned up. The same structure at the same spot in one run counts once, however many rovers took turns on it.</li>
       </ol>
       <p>Every 6 hours a scheduled job runs the logger on seeds it hasn’t tried yet and republishes the data, and this page picks up anything new on its own. To search more yourself, run the logger from the site folder. With <code>--serve</code> it also serves this page locally, so you can watch farms appear:</p>
       <pre>node tools/farm-log.js --watch --serve 8080</pre>
@@ -183,7 +188,7 @@ function miniShape(cells, bite) {
 /* ---------- render ---------- */
 function renderStats(db) {
   var t = db.totals, harvests = db.farms.reduce(function (a, f) { return a + f.field.harvests; }, 0);
-  $('#stats').innerHTML = [[db.farms.length, 'farm structures'], [t.runs, 'simulation runs'], [t.generations, 'generations simulated'], [t.farmSessions, 'farming sessions'], [harvests, 'harvested meals']]
+  $('#stats').innerHTML = [[db.farms.length, 'farm structures'], [t.instances != null ? t.instances : t.farmSessions, 'farms spotted'], [t.runs, 'simulation runs'], [t.generations, 'generations simulated'], [harvests, 'harvested meals']]
     .map(function (s) { return '<li><b>' + fmt(s[0]) + '</b><span>' + s[1] + '</span></li>'; }).join('');
 }
 
@@ -195,11 +200,13 @@ function renderFarms(db) {
   db.farms.forEach(function (f) {
     var F = f.field, worlds = Object.keys(F.worlds).map(function (w) { return '<span class="tag">' + esc(worldName(w)) + ' · ' + fmt(F.worlds[w]) + '</span>'; }).join('');
     var card = document.createElement('article'); card.className = 'card' + (fresh[f.key] ? ' fresh' : '');
+    var seen = F.instances != null ? F.instances : F.sessions;
     card.innerHTML = (fresh[f.key] ? '<span class="badge">New</span>' : '') +
+      '<span class="spotted" title="Distinct places this farm turned up: the same structure at the same spot in one run counts once"><b>' + fmt(seen) + '×</b><span>spotted</span></span>' +
       '<div class="stage"><canvas role="img"></canvas></div>' +
       '<div class="card-body"><h3>' + esc(f.name) + '</h3>' +
       '<div class="yield">Feeds ' + feeds(f.lab) + '</div>' +
-      '<div>' + plural(f.size, 'cell') + ' · used ' + plural(F.sessions, 'time') + ' · ' + plural(F.harvests, 'harvest') + ' · longest stay ' + plural(F.longest, 'generation') + '</div>' +
+      '<div>Spotted ' + plural(seen, 'time') + ', farmed in ' + plural(F.sessions, 'session') + ' · ' + plural(F.harvests, 'harvest') + ' · longest stay ' + plural(F.longest, 'generation') + ' · ' + plural(f.size, 'cell') + '</div>' +
       '<div class="tags">' + worlds + '</div>' +
       (f.partial ? '<div class="warn">Bigger than the logged snapshot, so this may be only part of it.</div>' : '') +
       '<div class="first">First spotted ' + esc(when(f.firstSpotted.at)) + ' in ' + esc(worldName(f.firstSpotted.world)) + ', seed ' + esc(f.firstSpotted.seed) + ', generation ' + fmt(f.firstSpotted.gen) + '</div></div>';
@@ -208,16 +215,17 @@ function renderFarms(db) {
   });
 }
 
-/* "Yes" when farmers farmed the object itself; otherwise name the farms it was part of */
-function used(o) {
+/* How often farmers used the object: on its own, or as part of other farms (with those farms' counts) */
+function used(o, seenByName) {
   var farms = o.spottedIn || [];
-  if (farms.indexOf(o.name) >= 0) return '<span class="yes">Yes</span>';
-  if (farms.length) return 'As part of ' + farms.map(esc).join(', ');
+  if (farms.indexOf(o.name) >= 0) return '<span class="yes">Yes</span>, spotted ' + plural(seenByName[o.name] || 0, 'time');
+  if (farms.length) return 'As part of ' + farms.map(function (n) { return esc(n) + ' (' + plural(seenByName[n] || 0, 'time') + ')'; }).join(', ');
   return '<span class="no">Not yet</span>';
 }
 
 function renderCatalogue(db) {
-  var body = $('#catalogue tbody'), rows = (db.catalogue && db.catalogue.objects) || [];
+  var body = $('#catalogue tbody'), rows = (db.catalogue && db.catalogue.objects) || [], seenByName = {};
+  db.farms.forEach(function (f) { seenByName[f.name] = (seenByName[f.name] || 0) + (f.field.instances != null ? f.field.instances : f.field.sessions); });
   body.innerHTML = '';
   rows.slice().sort(function (a, b) { return (b.best ? 1 : 0) - (a.best ? 1 : 0) || a.name.localeCompare(b.name); }).forEach(function (o) {
     var tr = document.createElement('tr'), best = o.best;
@@ -225,7 +233,7 @@ function renderCatalogue(db) {
       '<td>' + (best ? '<span class="yes">Yes</span>, ' + feeds(best) : '<span class="no">No</span>') + '</td>' +
       '<td class="num">' + o.sustaining.length + ' of ' + o.bitesTried + '</td>' +
       '<td>' + (best ? esc(best.becomes) : '<span class="no">nothing that feeds it</span>') + '</td>' +
-      '<td>' + used(o) + '</td>';
+      '<td>' + used(o, seenByName) + '</td>';
     tr.children[1].appendChild(best ? miniShape(best.cells, best.bite) : miniShape(o.cells, null));
     body.appendChild(tr);
   });

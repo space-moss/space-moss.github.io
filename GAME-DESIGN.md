@@ -18,7 +18,7 @@ The world is larger than the screen (up to 260 × 200 squares, wrapping at the e
 | Fog of war | You see what you, your scouts and your sensors see right now; memory fades over 400 turns | Makes scouting worth something |
 | Map (M) | Everything your own rover has discovered, optionally with what scouts and sensors found. Resizable, scrollable, zoomable; click it to walk there | You plan routes on what you know |
 | Glider rain | One every 24 turns at first, speeding up by 2 every 250 turns, down to every 6 | Gliders are food, but they also wreck farms |
-| The Warden | A 13 × 9 ship on the far side of the world. Its core holds 800 and leaks 1.5 a turn. You charge 20 a turn from next to the hull; a child sent to it gives 10 a turn until it's down to 15 | The ending: overcharge it and it breaks apart into Life |
+| The Warden | A 25 × 17 ship on the far side of the world, built of two sealed chambers, each with its own Life rule against the Conway plane: a **Maze corridor** (B3/S12345) round the outside, with a door on each side, and a **Reactor** (Walled Cities, B45678/S2345) in the middle, entered through a door at its top or bottom. When the core is half full the reactor switches to **Seeds** (B2/S), and back again if it leaks below. The core holds 800 and leaks 1.5 a turn. You can only charge it from the 8 squares next to it (20 a turn); a child sent to the ship finds its way to the core and gives 10 a turn until it's down to 15 | The ending: get inside, overcharge it, and it breaks apart into Life, taking its rules with it |
 | Colony size | 24 children | Keeps it fast on phones |
 
 **Roles**
@@ -33,7 +33,7 @@ The world is larger than the screen (up to 260 × 200 squares, wrapping at the e
 
 **How it ends:** you win by overcharging the Warden, and you lose if your rover runs out of energy. Your fastest win (in turns) and best score are saved in your own browser.
 
-**Balance so far:** a scripted player that grows a farming colony and then ferries energy to the Warden won 2 of 4 games (turns 960 and 3,088). It lost one because the core leaked empty between trips, and it stalled in the other. So the leak is doing its job: you have to charge faster than it bleeds, which means several rovers charging at once. It needs real playtesting.
+**Balance so far:** with core-only charging, a scripted player reached the Seeds phase in all 4 test games but won only 1 (on turn 358). Once the reactor starves, the core leaks faster than a naive player refills it, so the second half is about bringing energy in from outside: farms, a chain of children charging, or both. It needs real playtesting.
 
 ## New roles
 
@@ -59,15 +59,46 @@ Ordered roughly from most to least game-changing.
 
 ## Ships to infiltrate
 
-The Warden is the first ship, and for now all you do is feed it. Ships are defined in `SHIPS` at the top of `game.js`: a hull drawn in text, a core capacity and a leak rate. Ideas for turning them into the designed ships and systems you described:
+Ships are defined in `SHIPS` at the top of `game.js`. A ship is a text grid (`#` wall, `C` core, space for outside, and a letter for each chamber) plus a list of chambers. Each chamber has a name, a Life rule, how much of it starts alive, a colour, and optional `phases`: rules it switches to once the core is at least a given share full. Every square of the world carries a rule, so each chamber steps by its own while the rest of the world keeps Conway's. Chambers are sealed by straight single walls, so Life on either side can't touch (cells two squares apart aren't neighbours); they only meet at their doors, where each cell follows the rule of the square it's on. Rovers find their way through the doors with pathfinding (a distance field over everything that isn't hull). Your farmers' forecast still assumes Conway's rule, so inside a ship their predictions are wrong: that's the "different logic".
 
-1. **Each ship runs its own Life rule inside the hull.** Give the hull an interior (cells marked `.` inside `#` walls) that steps with a different rule, for example HighLife (B36/S23, which has replicators), Seeds (B2/S, where everything explodes and nothing survives) or Day & Night (B3678/S34678, dense and blobby). Your farmer's forecast assumes Conway's rules, so inside a ship its predictions are wrong. That's the "different logic" you mentioned, and the first thing a player has to work out.
-2. **Learning the rule.** A sensor parked at an airlock watches the interior. After enough turns it works out the rule (compare what it saw against what each candidate rule predicted), and from then on your rovers' forecasts are right inside that ship. So infiltrating starts as a research job.
-3. **Airlocks on a clock.** Openings in the hull made of oscillators: a blinker gate is open every other turn. Turn-based movement makes timing puzzles fair, since you can wait exactly one turn.
-4. **Systems to take down, in any order.** A ship has several subsystems (shield emitter, reactor, gun) at fixed spots inside. Each one needs a different trick: overcharge it, starve it (eat the cells feeding it), or block it (park a sentry in its output). The core only becomes chargeable once the shield is down.
-5. **Rovers become visible inside.** Inside a hull, rovers count as live cells, like the hunter in part 1.6. Your presence changes the ship's Life, so you can break structures just by standing next to them, and so can it.
-6. **The ship fights back as it fills up.** At 25% it starts firing gliders from a gun in its hull. At 50% it drains energy from any rover within 3 squares. At 75% it jumps to a new spot on the map, and you have to find it again (sensors pay off here).
-7. **A ship designer.** Ships are just text grids plus a rule string, so a small page like `farms.html` could let you draw hulls, choose rules and place systems, then save them to `ships.json` for the game to load.
+**Why Seeds for the second phase:** in this game, live cells are food. Serviettes (87% of the reactor flipping every turn) would feed charging rovers more and make the second half easier. Seeds keeps the reactor sparse (about 11% alive), so it becomes a famine exactly when you're halfway, and you have to carry energy in.
+
+### Rules for hulls
+
+Any Life-like rule works: `B` lists the neighbour counts that bring a dead cell to life, `S` the counts that keep a live one alive. How each behaves inside the Warden's interior (86 squares, walls count as dead), measured over 8 worlds and turns 100 to 300:
+
+| Rule | B/S | Alive | Changing per turn | Died out | What it would feel like |
+|---|---|---|---|---|---|
+| Walled Cities (the Warden) | B45678/S2345 | 60% | 24% | 0 of 8 | Dense, churning districts: lots to eat, always regrowing |
+| Assimilation | B345/S4567 | 70% | 29% | 0 of 8 | A thick living mass that heals itself; an armoured ship |
+| Serviettes | B234/S | 44% | 87% | 0 of 8 | Almost everything flips every turn: a reactor that never settles, nothing to plan around |
+| Replicator | B1357/S1357 | 50% | 50% | 0 of 8 | Every pattern copies itself; anything you break comes back doubled |
+| Gnarl | B1/S1 | 26% | 38% | 0 of 8 | Explosive, spidery growth from single cells |
+| Seeds | B2/S | 11% | 22% | 0 of 8 | Every cell dies each turn, but sparks keep catching; flickering, dangerous corridors |
+| Life without Death | B3/S012345678 | 72% | 0% | 0 of 8 | Cells never die, so the inside fills solid; you tunnel in by eating |
+| Maze | B3/S12345 | 65% | 0% | 0 of 8 | Grows into corridors; an infiltration labyrinth |
+| Long Life | B345/S5 | 16% | 32% | 2 of 8 | Slow, long-period oscillators: timing puzzles |
+| HighLife | B36/S23 | 6% | 2% | 0 of 8 | Looks like Conway's rule, which is the trap: replicators appear where you don't expect them |
+| 2x2 | B36/S125 | 7% | 0% | 0 of 8 | Settles into 2 × 2 tiles; quiet |
+| Day & Night | B3678/S34678 | 2% | 2% | 6 of 8 | Dies out in a small hull; needs a big open one to form its blobs |
+| Coral, Anneal, Morley, Diamoeba | various | 0 to 2% | about 1% | 5 to 8 of 8 | Mostly die in a hull this small |
+
+You can measure a new rule the same way before using it: change a ship's `rule` and count its inside over a few hundred turns with `new RoverGame.World(...)` in the browser console.
+
+### Ideas beyond one fixed rule
+
+- **The rule changes as you charge it** (done): the Warden's reactor starves when you pass halfway. More phases are one line each in `phases`, for example the corridor turning to Life without Death at 75% so it fills in behind you.
+- **Different rules in different chambers** (done): the Maze corridor and the Reactor. A third chamber, like a Serviettes antechamber you have to cross quickly, is a new letter in the grid and a new entry in `rooms`.
+- **Rovers count as live cells inside** (part 1.6's rule). Standing next to something changes it, so every step inside the ship matters.
+- **Multi-state rules** like Brian's Brain, where dying cells linger for a turn. They'd need a second byte per square, but they give walls of "dying" cells rovers can't cross.
+
+### More ship ideas
+
+1. **Learning the rule.** A sensor parked at an airlock watches the interior. After enough turns it works out the rule (compare what it saw against what each candidate rule predicted), and from then on your rovers' forecasts are right inside that ship. So infiltrating starts as a research job.
+2. **Airlocks on a clock.** Openings in the hull made of oscillators: a blinker gate is open every other turn. Turn-based movement makes timing puzzles fair, since you can wait exactly one turn.
+3. **Systems to take down, in any order.** A ship has several subsystems (shield emitter, reactor, gun) at fixed spots inside. Each one needs a different trick: overcharge it, starve it (eat the cells feeding it), or block it (park a sentry in its output). The core only becomes chargeable once the shield is down.
+4. **The ship fights back as it fills up.** At 25% it starts firing gliders from a gun in its hull. At 50% it drains energy from any rover within 3 squares. At 75% it jumps to a new spot on the map, and you have to find it again (sensors pay off here).
+5. **A ship designer.** Ships are just text grids plus a rule string, so a small page like `farms.html` could let you draw hulls, choose rules and place systems, then save them to `ships.json` for the game to load.
 
 ## Game modes
 

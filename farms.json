@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-30T20:47:06.298Z",
+ "updated": "2026-09-30T21:50:24.681Z",
  "definition": {
   "minHarvests": 10,
   "maxGap": 16,
@@ -10,6 +10,7 @@
   "generations": 69000,
   "candidates": 1060,
   "farmSessions": 1044,
+  "instances": 1025,
   "surroundingsSessions": 16,
   "surroundingsHarvests": 7210
  },
@@ -77,6 +78,7 @@
     "run": "508739da-glider-rain-farmer-s1-g1500"
    },
    "field": {
+    "instances": 1023,
     "sessions": 1042,
     "harvests": 672832,
     "longest": 1491,
@@ -184,6 +186,7 @@
     "run": "508739da-soup-farmer-s10-g1500"
    },
    "field": {
+    "instances": 1,
     "sessions": 1,
     "harvests": 537,
     "longest": 1072,
@@ -290,6 +293,7 @@
     "run": "508739da-glider-rain-farmer-s15-g1500"
    },
    "field": {
+    "instances": 1,
     "sessions": 1,
     "harvests": 15,
     "longest": 15,

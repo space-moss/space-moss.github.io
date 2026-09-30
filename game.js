@@ -10,7 +10,9 @@
    - You build children instead of splitting automatically. Children send you part of each meal while they're
      comfortably fed. Sensors run on your power.
    - LIDAR is a cone that widens with energy. You only see what your LIDAR, your scouts and your sensors see.
-   - Somewhere on the map is a ship, the Warden. Feed its core more energy than it can hold and it breaks up. That's the win.
+   - Somewhere on the map is a ship, the Warden. It's built of sealed chambers, and each chamber runs its own Life rule
+     against the Conway plane around it; some rules change as the core fills. You can only charge the core from right
+     next to it, so you have to find the way in. Overcharge it and it breaks up. That's the win.
 
    Exposes window.RoverGame = { open(options), close(), isOpen(), world() }. */
 (function () {
@@ -25,20 +27,45 @@ var RULES = {
   soup: 0.16, gliderEvery: 24, gliderFloor: 6, memory: 400,
   chargePerTurn: 20, childCharge: 10, childKeeps: 15
 };
-/* Ships you have to overcharge. Each one is a solid hull (Life can't grow inside it) with a core that holds
-   `capacity` energy and leaks `bleed` a turn. Later ships can carry their own Life rules and systems. */
+/* Ships you have to overcharge. In `rows`: '#' is wall, 'C' is the core (solid too), ' ' is outside the ship, and every
+   other letter is a square of the chamber with that key in `rooms`. Each chamber is sealed by straight walls (so Life on
+   either side can't touch) except at its doors: chamber squares set into a wall. A chamber runs its own Life `rule`
+   (B = neighbour counts that give birth, S = counts that let a cell survive); `phases` switch it to another rule once
+   the core is at least `at` full, and back if it leaks below. `fill` is how much of a chamber starts alive. The core
+   holds `capacity` energy and leaks `bleed` a turn, and you can only charge it from one of the 8 squares around it. */
 var SHIPS = [
-  { name: 'the Warden', capacity: 800, bleed: 1.5, rows: [
-    '....#####....',
-    '..#########..',
-    '.###########.',
-    '#############',
-    '#############',
-    '#############',
-    '.###########.',
-    '..#########..',
-    '....#####....'] }
+  { name: 'the Warden', capacity: 800, bleed: 1.5,
+    rooms: {
+      m: { name: 'Maze corridor', rule: 'B3/S12345', ruleName: 'Maze', fill: 0.3, color: [176, 146, 226] },
+      r: { name: 'Reactor', rule: 'B45678/S2345', ruleName: 'Walled Cities', fill: 0.5, color: [222, 138, 116],
+           phases: [{ at: 0.5, rule: 'B2/S', ruleName: 'Seeds' }] }
+    },
+    rows: [
+      '#########################',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#mmm########r########mmm#',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      'mmmm#rrrrrrrCrrrrrrr#mmmm',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      '#mmm#rrrrrrrrrrrrrrr#mmm#',
+      '#mmm########r########mmm#',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#mmmmmmmmmmmmmmmmmmmmmmm#',
+      '#########################'] }
 ];
+/* "B3/S23" -> bit masks: bit n of born is set if a dead cell with n live neighbours comes alive, and so on */
+function parseRule(str) {
+  var m = /^B([0-8]*)\/S([0-8]*)$/i.exec(String(str).replace(/\s/g, '')), born = 0, survive = 0;
+  if (!m) throw new Error('Not a Life-like rule: ' + str);
+  [].forEach.call(m[1], function (d) { born |= 1 << +d; }); [].forEach.call(m[2], function (d) { survive |= 1 << +d; });
+  return { born: born, survive: survive };
+}
 var ROLES = [
   { id: 'farmer', name: 'Farmer', color: '#74a3e3', key: '1', text: 'Looks five generations ahead to find squares where food keeps being born, and parks there. Walks to farm sites your scouts and sensors report.' },
   { id: 'scout', name: 'Scout', color: '#e6b85c', key: '2', text: 'Sees all the way round, whatever its energy. Explores, reports blocks as farm sites, and lets you see what it sees.' },
@@ -71,11 +98,16 @@ function World(W, H, seed) {
   var beacon = new Uint8Array(N);         // 1 where a rover harvested on its last turn
   var seenAt = new Int32Array(N), mem = new Uint8Array(N);
   var found = new Uint8Array(N);          // bit 1: your rover has seen it; bit 2: a scout or sensor has
+  var ruleMap = new Uint8Array(N);        // which rule each square runs: 0 is Conway's, 1 and up are ships'
+  var roomOf = new Uint8Array(N);         // which ship chamber a square belongs to (index + 1), 0 for none
+  var BORN = [], SURV = [];
+  function addRule(str) { var r = parseRule(str); BORN.push(r.born); SURV.push(r.survive); return BORN.length - 1; }
+  addRule('B3/S23');
   var rng = mulberry32(seed), brain = mulberry32(seed ^ 0x9E3779B9);
   this.W = W; this.H = H; this.gen = 0; this.rovers = []; this.sites = new Map(); this.events = []; this.over = false; this.won = false;
   this.stats = { meals: 0, playerMeals: 0, built: 0, sitesFound: 0, farmerHarvests: 0, deaths: 0, charged: 0, mappedByYou: 0, mappedByAll: 0 };
   this.farmsNow = 0; this.notices = [];
-  this.cells = function () { return a; }; this.seenAt = seenAt; this.mem = mem; this.found = found; this.occ = occ;
+  this.cells = function () { return a; }; this.seenAt = seenAt; this.mem = mem; this.found = found; this.occ = occ; this.ruleMap = ruleMap; this.roomOf = roomOf;
   function idx(x, y) { x %= W; if (x < 0) x += W; y %= H; if (y < 0) y += H; return y * W + x; }
   function wrapD(d, M) { d %= M; if (d > M / 2) d -= M; else if (d < -M / 2) d += M; return d; }
   this.idx = idx; this.wrapD = wrapD;
@@ -93,13 +125,70 @@ function World(W, H, seed) {
   var px0 = (W * 0.25) | 0, py0 = (H * 0.5) | 0;
   var ship = SHIPS[0], sh = ship.rows.length, sw = ship.rows[0].length;
   var bx = ((W * 0.75) | 0) + (((rng() - 0.5) * W * 0.15) | 0) - (sw >> 1), by = ((rng() * (H - sh)) | 0);
-  this.boss = { name: ship.name, x: bx, y: by, w: sw, h: sh, capacity: ship.capacity, bleed: ship.bleed, charge: 0, found: -1, hull: [], broken: false };
-  ship.rows.forEach(function (row, y) { [].forEach.call(row, function (ch, x) { if (ch === '#') { var ci = idx(bx + x, by + y); occ[ci] = HULL; a[ci] = 0; self.boss.hull.push(ci); } }); });
-  for (var dy = -3; dy <= sh + 2; dy++) for (var dx = -3; dx <= sw + 2; dx++) { var ci0 = idx(bx + dx, by + dy); if (occ[ci0] !== HULL) a[ci0] = 0; }
+  this.boss = { name: ship.name, x: bx, y: by, w: sw, h: sh, cx: bx + (sw >> 1), cy: by + (sh >> 1),
+                capacity: ship.capacity, bleed: ship.bleed, charge: 0, found: -1, hull: [], rooms: [], broken: false };
+  var roomIndex = {};
+  Object.keys(ship.rooms).forEach(function (key) {
+    var def = ship.rooms[key], stages = [{ at: 0, rule: def.rule, ruleName: def.ruleName || def.rule }].concat(def.phases || []);
+    stages.forEach(function (st) { st.id = addRule(st.rule); });
+    roomIndex[key] = self.boss.rooms.length;
+    self.boss.rooms.push({ key: key, name: def.name, color: def.color || [222, 138, 116], fill: def.fill || 0, stages: stages, stage: 0, squares: [] });
+  });
+  for (var dy = -3; dy <= sh + 2; dy++) for (var dx = -3; dx <= sw + 2; dx++) a[idx(bx + dx, by + dy)] = 0;   // clear the ground round it
+  ship.rows.forEach(function (row, y) { [].forEach.call(row, function (ch, x) { var ci = idx(bx + x, by + y);
+    if (ch === '#' || ch === 'C') { occ[ci] = HULL; a[ci] = 0; self.boss.hull.push(ci); if (ch === 'C') { self.boss.cx = bx + x; self.boss.cy = by + y; } }
+    else if (ch !== ' ') { var room = self.boss.rooms[roomIndex[ch]]; if (!room) throw new Error('No chamber called ' + ch + ' in ' + ship.name);
+      room.squares.push(ci); roomOf[ci] = roomIndex[ch] + 1; ruleMap[ci] = room.stages[0].id; a[ci] = rng() < room.fill ? 1 : 0; } }); });
+  this.boss.core = idx(this.boss.cx, this.boss.cy);
+  /* each chamber's rule follows the core: the last phase it has reached */
+  function updatePhases(announce) {
+    var frac = self.boss.charge / self.boss.capacity;
+    self.boss.rooms.forEach(function (room) {
+      var k = 0; room.stages.forEach(function (st, i) { if (frac >= st.at) k = i; });
+      if (k === room.stage) return;
+      var up = k > room.stage; room.stage = k;
+      room.squares.forEach(function (ci) { ruleMap[ci] = room.stages[k].id; });
+      if (announce) notice(self.boss.name.charAt(0).toUpperCase() + self.boss.name.slice(1) + '’s ' + room.name.toLowerCase() + (up ? ' has switched to ' : ' has fallen back to ') +
+        room.stages[k].ruleName + ' (' + room.stages[k].rule + ').');
+    });
+  }
   for (dy = -2; dy <= 2; dy++) for (dx = -2; dx <= 2; dx++) a[idx(px0 + dx, py0 + dy)] = 0;
-  function nextToHull(x, y) { for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) if ((i || j) && occ[idx(x + i, y + j)] === HULL) return true; return false; }
-  this.nextToHull = function (r) { return nextToHull(r.x, r.y); };
+  function nextToCore(x, y) { var b = self.boss; return !b.broken && Math.max(Math.abs(wrapD(x - b.cx, W)), Math.abs(wrapD(y - b.cy, H))) === 1; }
+  this.nextToCore = function (r) { return nextToCore(r.x, r.y); };
   this.isHull = function (x, y) { return occ[idx(x, y)] === HULL; };
+  this.isShip = function (x, y) { var ci = idx(x, y); return occ[ci] === HULL || roomOf[ci] > 0; };
+
+  /* ---------- pathfinding: distance fields over everything that isn't hull ----------
+     A field holds, for every square, how many moves it is from the goal squares (moving like a rover, diagonals
+     included). Walking one means stepping to any free neighbour that's closer. Fields are cached; the hull never
+     changes until the ship breaks up. */
+  var fields = new Map();
+  function field(key, goals) {
+    if (fields.has(key)) { var hit = fields.get(key); fields.delete(key); fields.set(key, hit); return hit; }
+    var dist = new Int32Array(N).fill(-1), queue = new Int32Array(N), head = 0, tail = 0;
+    goals.forEach(function (g) { if (occ[g] !== HULL && dist[g] < 0) { dist[g] = 0; queue[tail++] = g; } });
+    while (head < tail) { var c = queue[head++], cx = c % W, cy = (c / W) | 0, d = dist[c] + 1;
+      for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue; var nb = idx(cx + i, cy + j);
+        if (dist[nb] < 0 && occ[nb] !== HULL) { dist[nb] = d; queue[tail++] = nb; } } }
+    fields.set(key, dist); if (fields.size > 12) fields.delete(fields.keys().next().value);
+    return dist;
+  }
+  function coreField() { var b = self.boss, goals = [];
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) if (i || j) goals.push(idx(b.cx + i, b.cy + j));
+    return field('core', goals); }
+  /* where an order leads: to the core if it's anywhere on the ship's hull, otherwise to that square */
+  function orderField(t) { var ci = idx(t[0], t[1]); return occ[ci] === HULL ? coreField() : field('sq' + ci, [ci]); }
+  function followField(r, dist) {
+    var here = dist[idx(r.x, r.y)];
+    if (here === 0) return null;                    // arrived
+    if (here < 0) return [0, 0];                    // no way there from here
+    var best = null, bestD = here, ties = 0;
+    for (var j = -1; j <= 1; j++) for (var i = -1; i <= 1; i++) { if (!i && !j) continue;
+      var d = dist[idx(r.x + i, r.y + j)]; if (d < 0 || d > bestD || !canMove(r, i, j)) continue;
+      if (d < bestD) { bestD = d; best = [i, j]; ties = 1; } else if (d === bestD && best && brain() * ++ties < 1) best = [i, j]; }
+    return best && bestD < here ? best : [0, 0];
+  }
+  this.reachable = function (r, x, y) { return orderField([x, y])[idx(r.x, r.y)] >= 0; };
 
   var nextId = 0;
   function addRover(role, x, y, e, face) {
@@ -123,7 +212,9 @@ function World(W, H, seed) {
     seenAt[ci] = self.gen; mem[ci] = a[ci];
     var bit = mine ? 1 : 2;
     if (!(found[ci] & bit)) { if (mine) self.stats.mappedByYou++; if (!found[ci]) self.stats.mappedByAll++; found[ci] |= bit; }
-    if (occ[ci] === HULL && self.boss.found < 0) { self.boss.found = self.gen; notice('Found ' + self.boss.name + '. Get next to its hull and press C to charge it.'); }
+    if ((occ[ci] === HULL || roomOf[ci]) && self.boss.found < 0) { self.boss.found = self.gen;
+      notice('Found ' + self.boss.name + '. Its chambers run their own rules (' + self.boss.rooms.map(function (r) { return r.name.toLowerCase() + ': ' + r.stages[0].ruleName; }).join(', ') +
+        '). Find a way in and charge the core from right next to it.'); }
   }
   /* Scan for one rover. `eyes` rovers (you, scouts and sensors) also light up the map. */
   function scan(r, eyes) {
@@ -237,8 +328,7 @@ function World(W, H, seed) {
       if (inp.charge) return [0, 0];
       if (inp.dx || inp.dy) { r.target = null; return canMove(r, inp.dx, inp.dy) ? [inp.dx, inp.dy] : [0, 0]; }
       if (r.target) {
-        if (occ[idx(r.target[0], r.target[1])] === HULL && nextToHull(r.x, r.y)) { r.target = null; return [0, 0]; }
-        d = toward(r, r.target[0], r.target[1]);
+        d = followField(r, orderField(r.target));
         if (!d) { r.target = null; return [0, 0]; }
         if (!d[0] && !d[1]) { if (++r.stuck > 6) { r.target = null; r.stuck = 0; } } else r.stuck = 0;
         return d;
@@ -249,8 +339,9 @@ function World(W, H, seed) {
     if (r.charging) return [0, 0];
     // an order from the player comes first
     if (r.target) {
-      if (occ[idx(r.target[0], r.target[1])] === HULL && nextToHull(r.x, r.y)) { r.target = null; r.charging = true; return [0, 0]; }
-      d = toward(r, r.target[0], r.target[1]);
+      var toShip = occ[idx(r.target[0], r.target[1])] === HULL;
+      d = followField(r, orderField(r.target));
+      if (!d && toShip) { r.target = null; r.charging = true; return [0, 0]; }
       if (!d) { if (r.role === 'sentry') r.home = r.target; r.target = null; }
       else if (d[0] || d[1]) { r.stuck = 0; return d; }
       else if (++r.stuck > 20) { r.target = null; r.stuck = 0; }
@@ -325,8 +416,8 @@ function World(W, H, seed) {
         if (occ[ti]) moved = false;               // never two rovers on one square, never onto a hull
         else { occ[idx(r.x, r.y)] = 0; r.x = ti % W; r.y = (ti / W) | 0; occ[ti] = r.id + 1; r.e -= P.moveCost; r.face = Math.atan2(m[1], m[0]); }
       }
-      if (r === player && self.input.charge) { if (nextToHull(r.x, r.y)) self.lastCharge = chargeBoss(r, P.chargePerTurn); }
-      else if (r.charging) { if (!nextToHull(r.x, r.y) || !chargeBoss(r, P.childCharge)) r.charging = false; }
+      if (r === player && self.input.charge) { if (nextToCore(r.x, r.y)) self.lastCharge = chargeBoss(r, P.chargePerTurn); }
+      else if (r.charging) { if (!nextToCore(r.x, r.y) || !chargeBoss(r, P.childCharge)) r.charging = false; }
       var ci = idx(r.x, r.y);
       if (a[ci]) {
         a[ci] = 0; r.e += P.meal; r.meals++; self.stats.meals++;
@@ -349,11 +440,11 @@ function World(W, H, seed) {
       self.events.push({ x: r.x, y: r.y, t: performance.now(), kind: 'death' });
       notice('A ' + ROLE[r.role].name.toLowerCase() + ' ran out of energy.');
     });
-    // Life steps; rovers are invisible to it, and nothing grows inside a hull
+    // Life steps; rovers are invisible to it, nothing grows in a wall, and each square follows its own rule
     for (var y = 0; y < H; y++) { var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
-      for (var x = 0; x < W; x++) { var l = x === 0 ? W - 1 : x - 1, rr = x === W - 1 ? 0 : x + 1;
+      for (var x = 0; x < W; x++) { var l = x === 0 ? W - 1 : x - 1, rr = x === W - 1 ? 0 : x + 1, c = md + x;
         var n = a[up + l] + a[up + x] + a[up + rr] + a[md + l] + a[md + rr] + a[dn + l] + a[dn + x] + a[dn + rr];
-        b[md + x] = (n === 3 || (n === 2 && a[md + x] === 1)) ? 1 : 0; } }
+        b[c] = ((a[c] ? SURV[ruleMap[c]] : BORN[ruleMap[c]]) >> n) & 1; } }
     var tt = a; a = b; b = tt;
     var boss = self.boss;
     if (!boss.broken) boss.hull.forEach(function (ci) { a[ci] = 0; });
@@ -364,15 +455,17 @@ function World(W, H, seed) {
     // the core leaks; fill it past capacity and the ship breaks up into Life
     if (!boss.broken && !self.over) {
       if (boss.charge >= boss.capacity) breakUp();
-      else boss.charge = Math.max(0, boss.charge - boss.bleed);
+      else { boss.charge = Math.max(0, boss.charge - boss.bleed); updatePhases(true); }
     }
     if (self.events.length > 200) self.events.splice(0, self.events.length - 200);
   };
   function breakUp() {
     var boss = self.boss; boss.broken = true; boss.charge = boss.capacity;
     boss.hull.forEach(function (ci) { occ[ci] = 0; a[ci] = rng() < 0.45 ? 1 : 0; });
+    boss.rooms.forEach(function (room) { room.squares.forEach(function (ci) { ruleMap[ci] = 0; roomOf[ci] = 0; }); });   // its rules die with it
+    fields.clear();
     self.won = true; self.over = true;
-    self.events.push({ x: boss.x + (boss.w >> 1), y: boss.y + (boss.h >> 1), t: performance.now(), kind: 'boom' });
+    self.events.push({ x: boss.cx, y: boss.cy, t: performance.now(), kind: 'boom' });
   }
 
   /* ---------- orders ---------- */
@@ -502,13 +595,13 @@ function build() {
     '<div class="rg-card" data-card="help"><div class="rg-dialog" role="dialog" aria-modal="true" aria-labelledby="rg-help-h">' +
       '<h2 id="rg-help-h">Rover Colony</h2>' +
       '<p>You’re the white rover, alone in Conway’s Game of Life. Rovers aren’t live cells, so Life can’t see you: you eat the cell you’re standing on, and a cell that’s born under you while you sit still is a free meal. Parked on the corner of a <strong>block</strong>, you get one every turn.</p>' +
-      '<p>Somewhere on the far side of the world is a ship, <strong>the Warden</strong>. Its core holds 800 energy and leaks a little every turn. Pour in more than it can hold and it breaks apart. That’s how you win.</p>' +
+      '<p>Somewhere on the far side of the world is a ship, <strong>the Warden</strong>. It’s built of sealed chambers, and each one runs its own Life rule instead of Conway’s: a <strong>Maze corridor</strong> round the outside and a <strong>Reactor</strong> in the middle, drawn in their own colours. What you know about blocks and gliders may not hold in there, and the reactor’s rule changes once its core is half full. Its core holds 800 energy and leaks a little every turn. Get inside, pour in more than it can hold, and it breaks apart. That’s how you win.</p>' +
       '<h3>Controls</h3><ul>' +
         '<li><strong>The world only moves when you do.</strong> Each move is one generation, and every child takes a turn too.</li>' +
         '<li><strong>Move:</strong> arrow keys or WASD (hold to keep going), or click or tap the map to walk there. <strong>Space</strong> waits a turn, which is how you harvest.</li>' +
         '<li><strong>Build a child (B):</strong> costs 40 energy. Pick its role first (1 to 5).</li>' +
-        '<li><strong>Command a child:</strong> click it, change its role, then click the map to send it. Send one to the Warden and it charges it with its spare energy.</li>' +
-        '<li><strong>Charge (C):</strong> next to the Warden’s hull, puts 20 of your energy into its core.</li>' +
+        '<li><strong>Command a child:</strong> click it, change its role, then click the map to send it. Send one to the Warden’s hull and it finds its way to the core and charges it with its spare energy.</li>' +
+        '<li><strong>Charge (C):</strong> from one of the 8 squares right next to the Warden’s core, puts 20 of your energy into it. Click the ship to walk to the core; rovers find their own way through the doors.</li>' +
         '<li><strong>Map (M):</strong> everything your rover has seen. Drag its corner to resize it, scroll it, and click it to walk there.</li></ul>' +
       '<h3>Roles</h3><ul class="rg-roles">' + ROLES.map(function (r) { return '<li><i style="background:' + r.color + '"></i><span><strong>' + r.name + '.</strong> ' + esc(r.text) + '</span></li>'; }).join('') + '</ul>' +
       '<h3>The catch</h3><p>Moving costs 1 energy and every rover burns a little each turn; each sensor adds to your own upkeep. Children send you 30% of their meals while they have more than 40 energy. A rover that runs out shuts down, and when you do, you lose. The glider rain gets heavier the longer you last.</p>' +
@@ -557,7 +650,7 @@ function blocked() { return !q('[data-card="help"]').hidden || !q('[data-card="o
 function turn(kind, dx, dy) {
   var wd = state.world;
   if (wd.over || blocked()) return false;
-  if (kind === 'charge' && !wd.nextToHull(wd.player)) { toast(wd.boss.found >= 0 ? 'Get next to the Warden’s hull to charge it.' : 'Nothing to charge here. Find the Warden first.'); return false; }
+  if (kind === 'charge' && !wd.nextToCore(wd.player)) { toast(wd.boss.found >= 0 ? 'You can only charge the Warden from right next to its core. Find a way in.' : 'Nothing to charge here. Find the Warden first.'); return false; }
   wd.input.dx = kind === 'move' ? dx : 0; wd.input.dy = kind === 'move' ? dy : 0; wd.input.charge = kind === 'charge';
   wd.step();
   if (kind === 'charge' && !wd.lastCharge && !wd.over) toast('You don’t have energy to spare.');
@@ -572,12 +665,18 @@ function heldDir() { var dx = 0, dy = 0; for (var k in state.held) if (state.hel
 var LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
 function rgb(r, g, b) { return LE ? (255 << 24 | b << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | b << 8 | 255) >>> 0; }
 var C_UNSEEN = rgb(20, 20, 19), C_GROUND = rgb(44, 44, 41), C_LIVE = rgb(111, 181, 125), C_HULL = rgb(92, 46, 42), C_HULL_DIM = rgb(56, 32, 30);
+// inside a ship, each chamber has its own colours, so you can see where Conway's rule stops and another starts
+function roomPalette(room) {
+  if (room.pal) return room.pal;
+  var c = room.color, mix = function (f, base) { return rgb(Math.round(base[0] + (c[0] - base[0]) * f), Math.round(base[1] + (c[1] - base[1]) * f), Math.round(base[2] + (c[2] - base[2]) * f)); };
+  return (room.pal = { live: rgb(c[0], c[1], c[2]), ground: mix(0.12, [40, 40, 38]), memLive: mix(0.35, [20, 20, 19]), mem: mix(0.08, [26, 26, 24]) });
+}
 var C_MEM = [], C_MEMLIVE = [];
 for (var mi = 0; mi < 16; mi++) { var f = 1 - mi / 16; C_MEM.push(rgb(Math.round(20 + 12 * f), Math.round(20 + 12 * f), Math.round(19 + 11 * f))); C_MEMLIVE.push(rgb(Math.round(20 + 40 * f), Math.round(20 + 70 * f), Math.round(19 + 45 * f))); }
 function cellColor(wd, i, gen, M) {
-  var age = gen - wd.seenAt[i], hull = wd.occ[i] === HULL;
-  if (age <= 1) return hull ? C_HULL : wd.cells()[i] ? C_LIVE : C_GROUND;
-  if (age < M) { var k = Math.min(15, (age * 16 / M) | 0); return hull ? C_HULL_DIM : wd.mem[i] ? C_MEMLIVE[k] : C_MEM[k]; }
+  var age = gen - wd.seenAt[i], hull = wd.occ[i] === HULL, room = wd.roomOf[i] ? roomPalette(wd.boss.rooms[wd.roomOf[i] - 1]) : null;
+  if (age <= 1) return hull ? C_HULL : room ? (wd.cells()[i] ? room.live : room.ground) : wd.cells()[i] ? C_LIVE : C_GROUND;
+  if (age < M) { var k = Math.min(15, (age * 16 / M) | 0); return hull ? C_HULL_DIM : room ? (wd.mem[i] ? room.memLive : room.mem) : wd.mem[i] ? C_MEMLIVE[k] : C_MEM[k]; }
   return C_UNSEEN;
 }
 
@@ -605,10 +704,15 @@ function draw() {
   // the Warden's core, once you've seen it: fills up as you charge it
   var boss = wd.boss;
   if (boss.found >= 0 && !boss.broken && onScreen(boss.x, boss.y, boss.w * s + 40)) {
-    var cx = sx(boss.x) + boss.w * s / 2, cy = sy(boss.y) + boss.h * s / 2, frac = Math.min(1, boss.charge / boss.capacity), R = s * 1.8;
+    var cx = sx(boss.cx) + s / 2, cy = sy(boss.cy) + s / 2, frac = Math.min(1, boss.charge / boss.capacity), R = s * 1.4;
     ctx.fillStyle = 'rgba(20,20,19,0.8)'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(224,104,95,' + (0.35 + 0.6 * frac).toFixed(2) + ')'; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = 'rgba(224,104,95,0.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.font = '500 11px "Hanken Grotesk", system-ui, sans-serif'; ctx.textAlign = 'center';
+    boss.rooms.forEach(function (room, k) { var st = room.stages[room.stage], c = room.color;
+      ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',0.9)';
+      ctx.fillText(room.name + ': ' + st.ruleName + ' · ' + st.rule, sx(boss.x) + boss.w * s / 2, sy(boss.y) + boss.h * s + 14 + k * 14); });
+    ctx.textAlign = 'start';
   }
   // farm sites
   ctx.lineWidth = 1.5;
@@ -655,7 +759,9 @@ function drawMap() {
   for (var i = 0; i < W * H; i++) {
     if (!(found[i] & mask)) { px[i] = C_UNSEEN; continue; }
     var age = gen - wd.seenAt[i];
-    px[i] = wd.occ[i] === HULL ? (age <= 1 ? C_HULL : C_HULL_DIM) : age <= 1 ? (a[i] ? C_LIVE : C_GROUND) : wd.mem[i] ? C_MEMLIVE[Math.min(15, (Math.min(age, M - 1) * 16 / M) | 0)] : C_MEM[4];
+    var room = wd.roomOf[i] ? roomPalette(wd.boss.rooms[wd.roomOf[i] - 1]) : null;
+    px[i] = wd.occ[i] === HULL ? (age <= 1 ? C_HULL : C_HULL_DIM) : room ? (age <= 1 ? (a[i] ? room.live : room.ground) : wd.mem[i] ? room.memLive : room.mem)
+      : age <= 1 ? (a[i] ? C_LIVE : C_GROUND) : wd.mem[i] ? C_MEMLIVE[Math.min(15, (Math.min(age, M - 1) * 16 / M) | 0)] : C_MEM[4];
   }
   mp.bctx.putImageData(mp.img, 0, 0);
   var ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.drawImage(mp.base, 0, 0, W * z, H * z);
@@ -708,7 +814,7 @@ function updateHud(force) {
   while (state.goal < GOALS.length && GOALS[state.goal].done(wd)) { if (!force) toast('Goal done: ' + GOALS[state.goal].text); state.goal++; }
   q('[data-goal]').innerHTML = state.goal < GOALS.length ? '<em>Goal ' + (state.goal + 1) + ' of ' + GOALS.length + ':</em> ' + esc(GOALS[state.goal].text) : '<em>All goals done.</em>';
   q('[data-act="build"]').disabled = !(p.e >= RULES.buildMin && kids < RULES.maxChildren && !wd.over);
-  q('[data-act="charge"]').classList.toggle('hot', wd.nextToHull(p) && !boss.broken);
+  q('[data-act="charge"]').classList.toggle('hot', wd.nextToCore(p));
   var sel = q('[data-sel]'), r = state.selected;
   if (r && wd.rovers.indexOf(r) < 0) { r = state.selected = null; }
   if (!r) sel.hidden = true;
@@ -813,7 +919,9 @@ function command(x, y) {
   var st = state, wd = st.world;
   if (st.selected && st.selected !== wd.player) {
     if (!wd.send(st.selected, x, y)) { toast('Sensors stay where they’re built.'); return; }
-    toast(wd.isHull(x, y) ? 'Sent the ' + ROLE[st.selected.role].name.toLowerCase() + ' to charge the Warden.' : 'Sent the ' + ROLE[st.selected.role].name.toLowerCase() + ' there.');
+    var who = 'the ' + ROLE[st.selected.role].name.toLowerCase();
+    if (!wd.reachable(st.selected, x, y)) toast('There’s no way there from where ' + who + ' is.');
+    else toast(wd.isHull(x, y) ? 'Sent ' + who + ' to charge the Warden’s core.' : 'Sent ' + who + ' there.');
     updateHud(true);
   } else { wd.player.target = [x, y]; wd.player.stuck = 0; st.walking = true; st.repeatAt = 0; }
 }
@@ -902,5 +1010,5 @@ function close() {
 }
 
 // world() returns the running game, for experimenting from the browser console (for example RoverGame.world().player.e = 150)
-window.RoverGame = { open: open, close: close, isOpen: function () { return !!root; }, world: function () { return state && state.world; }, World: World, RULES: RULES, ROLES: ROLES, SHIPS: SHIPS };
+window.RoverGame = { open: open, close: close, isOpen: function () { return !!root; }, world: function () { return state && state.world; }, World: World, RULES: RULES, ROLES: ROLES, SHIPS: SHIPS, parseRule: parseRule };
 })();

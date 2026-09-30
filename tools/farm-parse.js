@@ -10,8 +10,12 @@
    are pruned. The structure counts as a FARM if, on its own in the lab, it feeds a parked rover forever.
    Candidates that don't are counted as "fed by their surroundings".
 
-   Usage: node tools/farm-parse.js [log files or folders...] [--out farms.json]
-          (defaults: every .jsonl file in logs/, and farms.json at the site root) */
+   A farm's instances are the distinct places it turned up: the same structure at the same spot in one run counts
+   once, however many rovers took turns on it (field.sessions counts those turns).
+
+   Usage: node tools/farm-parse.js [log files or folders...] [--out farms.json] [--rebuild]
+          (defaults: every .jsonl file in logs/, and farms.json at the site root)
+          --rebuild starts the counts again from the logs given, keeping each farm's id and first-spotted date. */
 const fs = require('fs');
 const path = require('path');
 const L = require('./farm-lib');
@@ -69,7 +73,9 @@ function structureOf(snap, radius) {
       if (t.r.sustains && t.r.yield === r.yield) { keep = trial; c = t.c; r = t.r; }
     }
   }
-  return { key: c.key, cells: c.cells, bite: c.bite, lab: r, partial };
+  // where the structure sits relative to the rover (its top-left corner), to tell one instance from another
+  const flat = keep.flat(), ax = Math.min(...flat.map((p) => p[0])), ay = Math.min(...flat.map((p) => p[1]));
+  return { key: c.key, cells: c.cells, bite: c.bite, lab: r, partial, anchor: [ax, ay] };
 }
 
 /* Name a farm: the whole structure if it's a known object (a block, with the rover on a corner), or else the
@@ -83,7 +89,7 @@ function nameStructure(cells, bite) {
 
 function emptyDb() {
   return { updated: null, definition: { minHarvests: MIN_HARVESTS, maxGap: MAX_GAP, reach: REACH },
-           totals: { runs: 0, generations: 0, candidates: 0, farmSessions: 0, surroundingsSessions: 0, surroundingsHarvests: 0 },
+           totals: { runs: 0, generations: 0, candidates: 0, farmSessions: 0, instances: 0, surroundingsSessions: 0, surroundingsHarvests: 0 },
            farms: [], catalogue: null };
 }
 
@@ -108,7 +114,7 @@ function mergeRun(db, runs, log, now) {
   if (runs.has(run.id)) return [];
   const end = events.find((e) => e.t === 'end');
   const snaps = events.filter((e) => e.t === 'snap');
-  const created = [];
+  const created = [], placed = new Set();          // farm key + world position, for counting instances in this run
   runs.add(run.id);
   db.totals.runs++; db.totals.generations += end ? end.g : 0;
   for (const s of sessionsOf(events)) {
@@ -123,10 +129,12 @@ function mergeRun(db, runs, log, now) {
       f = { key: st.key, id: 'f' + db.farms.length.toString().padStart(3, '0'), name: nameStructure(st.cells, st.bite),
             size: st.cells.length, cells: st.cells, bite: st.bite, lab: st.lab, partial: st.partial,
             firstSpotted: { at: now, world: run.world, strategy: run.strategy, seed: run.seed, gen: s.start, run: run.id },
-            field: { sessions: 0, harvests: 0, longest: 0, worlds: {}, strategies: {} } };
+            field: { instances: 0, sessions: 0, harvests: 0, longest: 0, worlds: {}, strategies: {} } };
       db.farms.push(f); created.push(f);
     }
-    const F = f.field;
+    const F = f.field, W = run.W, H = run.H;
+    const where = f.key + '@' + (((s.x + st.anchor[0]) % W + W) % W) + ',' + (((s.y + st.anchor[1]) % H + H) % H);
+    if (!placed.has(where)) { placed.add(where); F.instances = (F.instances || 0) + 1; db.totals.instances = (db.totals.instances || 0) + 1; }
     F.sessions++; F.harvests += s.harvests; F.longest = Math.max(F.longest, s.last - s.start);
     F.worlds[run.world] = (F.worlds[run.world] || 0) + 1;
     F.strategies[run.strategy] = (F.strategies[run.strategy] || 0) + 1;
@@ -151,14 +159,22 @@ function loadDb(file) {
 }
 
 /* Parse logs into farms.json. Returns { db, created } where created lists farms seen for the first time. */
-function parse({ inputs = [path.join(L.ROOT, 'logs')], out = path.join(L.ROOT, 'farms.json') } = {}) {
-  const db = loadDb(out), runs = loadRuns(out), now = new Date().toISOString(), created = [];
+function parse({ inputs = [path.join(L.ROOT, 'logs')], out = path.join(L.ROOT, 'farms.json'), rebuild = false } = {}) {
+  const old = loadDb(out), now = new Date().toISOString(), created = [];
+  const db = rebuild ? emptyDb() : old, runs = rebuild ? new Set() : loadRuns(out);
+  if (rebuild) db.catalogue = old.catalogue;
   if (db.runs) { db.runs.forEach((r) => runs.add(r.id)); delete db.runs; }   // older farms.json kept the list inside
   if (!db.catalogue || db.catalogue.version !== CATALOGUE_VERSION) db.catalogue = catalogue();
   for (const file of listLogs(inputs)) {
     const log = readLog(file);
     if (!log.complete) continue;                       // a run still being written
     created.push(...mergeRun(db, runs, log, now));
+  }
+  if (rebuild) {   // keep ids and first-spotted dates from before, so links and history survive a rebuild
+    let next = Math.max(-1, ...old.farms.map((f) => +f.id.slice(1))) + 1;
+    db.farms.forEach((f) => { const o = old.farms.find((x) => x.key === f.key);
+      if (o) { f.id = o.id; f.firstSpotted = o.firstSpotted; } else f.id = 'f' + String(next++).padStart(3, '0'); });
+    created.length = 0; created.push(...db.farms.filter((f) => !old.farms.some((x) => x.key === f.key)));
   }
   db.farms.sort((a, b) => b.field.harvests - a.field.harvests);
   // which farms each known object turned up in: on its own ("Block") or as part of one ("Blinker + Block")
@@ -176,9 +192,9 @@ module.exports = { parse, sessionsOf, structureOf, loadRuns, MIN_HARVESTS };
 
 if (require.main === module) {
   const argv = process.argv.slice(2), inputs = [];
-  let out;
-  for (let i = 0; i < argv.length; i++) { if (argv[i] === '--out') out = argv[++i]; else inputs.push(argv[i]); }
-  const { db, created } = parse({ inputs: inputs.length ? inputs : undefined, out });
+  let out, rebuild = false;
+  for (let i = 0; i < argv.length; i++) { if (argv[i] === '--out') out = argv[++i]; else if (argv[i] === '--rebuild') rebuild = true; else inputs.push(argv[i]); }
+  const { db, created } = parse({ inputs: inputs.length ? inputs : undefined, out, rebuild });
   console.log(`${db.farms.length} farm structures from ${db.totals.runs} runs (${db.totals.generations.toLocaleString()} generations).`);
   for (const f of created) console.log(`  new farm: ${f.name} (${f.size} cells), ${f.lab.mealsPerCycle} meal${f.lab.mealsPerCycle === 1 ? '' : 's'} every ${f.lab.period === 1 ? 'generation' : f.lab.period + ' generations'}`);
   if (!created.length) console.log('  no new farms.');
