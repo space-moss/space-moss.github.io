@@ -78,11 +78,16 @@ function structureOf(snap, radius) {
   return { key: c.key, cells: c.cells, bite: c.bite, lab: r, partial, anchor: [ax, ay] };
 }
 
-/* Name a farm: the whole structure if it's a known object (a block, with the rover on a corner), or else the
-   objects around the rover once the cell it's about to eat is taken away (a block and a blinker feeding the gap) */
-function nameStructure(cells, bite) {
+/* Name a farm: the whole structure if it's a known object (a block, with the rover on a corner); else the known
+   object whose lab cycle it is (an eater 1 settles into a different shape once a rover parks on it: "Eater 1 (bitten)");
+   else the objects around the rover once the cell it's about to eat is taken away (a block and a blinker feeding the gap) */
+const BITTEN = ' (bitten)';
+function nameStructure(cells, bite, catalogue) {
   const whole = L.nameOf(cells);
   if (whole) return whole;
+  const key = L.canon(cells).key;
+  const parent = catalogue && catalogue.objects.find((o) => o.sustaining.some((t) => t.becomesCells && L.canon(t.becomesCells).key === key));
+  if (parent) return parent.name + BITTEN;
   const rest = cells.filter((c) => c[0] !== bite[0] || c[1] !== bite[1]);
   return (rest.length < cells.length && L.nameOf(rest)) || `Unnamed ${cells.length}-cell structure`;
 }
@@ -126,7 +131,7 @@ function mergeRun(db, runs, log, now) {
     db.totals.farmSessions++;
     let f = db.farms.find((x) => x.key === st.key);
     if (!f) {
-      f = { key: st.key, id: 'f' + db.farms.length.toString().padStart(3, '0'), name: nameStructure(st.cells, st.bite),
+      f = { key: st.key, id: 'f' + db.farms.length.toString().padStart(3, '0'), name: nameStructure(st.cells, st.bite, db.catalogue),
             size: st.cells.length, cells: st.cells, bite: st.bite, lab: st.lab, partial: st.partial,
             firstSpotted: { at: now, world: run.world, strategy: run.strategy, seed: run.seed, gen: s.start, run: run.id },
             field: { instances: 0, sessions: 0, harvests: 0, longest: 0, worlds: {}, strategies: {} } };
@@ -176,10 +181,11 @@ function parse({ inputs = [path.join(L.ROOT, 'logs')], out = path.join(L.ROOT, '
       if (o) { f.id = o.id; f.firstSpotted = o.firstSpotted; } else f.id = 'f' + String(next++).padStart(3, '0'); });
     created.length = 0; created.push(...db.farms.filter((f) => !old.farms.some((x) => x.key === f.key)));
   }
+  db.farms.forEach((f) => { if (/^Unnamed /.test(f.name)) f.name = nameStructure(f.cells, f.bite, db.catalogue); });   // names can improve as the catalogue does
   db.farms.sort((a, b) => b.field.harvests - a.field.harvests);
   // which farms each known object turned up in: on its own ("Block") or as part of one ("Blinker + Block")
   db.catalogue.objects.forEach((o) => {
-    o.spottedIn = [...new Set(db.farms.map((f) => f.name))].filter((n) => n.split(' + ').some((part) => part.replace(/^\d+ × /, '') === o.name));
+    o.spottedIn = [...new Set(db.farms.map((f) => f.name))].filter((n) => n.split(' + ').some((part) => part.replace(/^\d+ × /, '').replace(BITTEN, '') === o.name));
     delete o.spotted;
   });
   db.updated = now;

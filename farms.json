@@ -1,18 +1,18 @@
 {
- "updated": "2026-10-01T01:15:18.136Z",
+ "updated": "2026-10-01T02:38:29.050Z",
  "definition": {
   "minHarvests": 10,
   "maxGap": 16,
   "reach": 2
  },
  "totals": {
-  "runs": 54,
-  "generations": 81000,
-  "candidates": 1261,
-  "farmSessions": 1244,
-  "instances": 1222,
-  "surroundingsSessions": 17,
-  "surroundingsHarvests": 7221
+  "runs": 190,
+  "generations": 325000,
+  "candidates": 3620,
+  "farmSessions": 3551,
+  "instances": 3479,
+  "surroundingsSessions": 69,
+  "surroundingsHarvests": 22016
  },
  "farms": [
   {
@@ -78,16 +78,18 @@
     "run": "508739da-glider-rain-farmer-s1-g1500"
    },
    "field": {
-    "instances": 1219,
-    "sessions": 1241,
-    "harvests": 800727,
-    "longest": 1491,
+    "instances": 3470,
+    "sessions": 3542,
+    "harvests": 2440229,
+    "longest": 3971,
     "worlds": {
-     "glider-rain": 673,
-     "soup": 568
+     "glider-rain": 2214,
+     "soup": 1328
     },
     "strategies": {
-     "farmer": 1241
+     "farmer": 3448,
+     "ambusher": 10,
+     "greedy": 84
     }
    }
   },
@@ -186,16 +188,107 @@
     "run": "508739da-glider-rain-farmer-s15-g1500"
    },
    "field": {
-    "instances": 2,
-    "sessions": 2,
-    "harvests": 1247,
+    "instances": 4,
+    "sessions": 4,
+    "harvests": 1376,
     "longest": 1232,
     "worlds": {
-     "glider-rain": 1,
+     "glider-rain": 3,
      "soup": 1
     },
     "strategies": {
-     "farmer": 2
+     "farmer": 4
+    }
+   }
+  },
+  {
+   "key": "b1,1|0,0;1,0;0,1;1,1;2,2;3,2;2,3;3,3",
+   "id": "f005",
+   "name": "Beacon",
+   "size": 8,
+   "cells": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "bite": [
+    1,
+    1
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 4,
+    "becomes": "Block",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      1
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-10-01T02:37:38.027Z",
+    "world": "glider-rain",
+    "strategy": "farmer",
+    "seed": 8,
+    "gen": 3441,
+    "run": "508739da-glider-rain-farmer-s8-g4000"
+   },
+   "field": {
+    "instances": 1,
+    "sessions": 1,
+    "harvests": 558,
+    "longest": 558,
+    "worlds": {
+     "glider-rain": 1
+    },
+    "strategies": {
+     "farmer": 1
     }
    }
   },
@@ -303,6 +396,237 @@
     },
     "strategies": {
      "farmer": 1
+    }
+   }
+  },
+  {
+   "key": "b0,1|1,0;2,0;0,1;1,1;1,2;3,2;2,3;3,3",
+   "id": "f003",
+   "name": "Eater 1 (bitten)",
+   "size": 8,
+   "cells": [
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "bite": [
+    0,
+    1
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "8-cell structure",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      3
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-10-01T02:34:50.577Z",
+    "world": "soup",
+    "strategy": "ambusher",
+    "seed": 1,
+    "gen": 1073,
+    "run": "508739da-soup-ambusher-s1-g1500"
+   },
+   "field": {
+    "instances": 1,
+    "sessions": 1,
+    "harvests": 29,
+    "longest": 29,
+    "worlds": {
+     "soup": 1
+    },
+    "strategies": {
+     "ambusher": 1
+    }
+   }
+  },
+  {
+   "key": "b0,2|2,0;3,0;1,1;3,1;0,2;1,2;1,3;3,3;2,4;3,4",
+   "id": "f004",
+   "name": "Unnamed 10-cell structure",
+   "size": 10,
+   "cells": [
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "bite": [
+    0,
+    2
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "10-cell structure",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      0,
+      3
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      0,
+      4
+     ],
+     [
+      1,
+      4
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-10-01T02:34:52.771Z",
+    "world": "soup",
+    "strategy": "ambusher",
+    "seed": 3,
+    "gen": 626,
+    "run": "508739da-soup-ambusher-s3-g1500"
+   },
+   "field": {
+    "instances": 2,
+    "sessions": 2,
+    "harvests": 24,
+    "longest": 14,
+    "worlds": {
+     "soup": 2
+    },
+    "strategies": {
+     "ambusher": 1,
+     "greedy": 1
     }
    }
   }
@@ -1219,7 +1543,9 @@
       ]
      ]
     },
-    "spottedIn": []
+    "spottedIn": [
+     "Eater 1 (bitten)"
+    ]
    },
    {
     "name": "Mango",
@@ -1548,7 +1874,9 @@
       ]
      ]
     },
-    "spottedIn": []
+    "spottedIn": [
+     "Beacon"
+    ]
    }
   ]
  }

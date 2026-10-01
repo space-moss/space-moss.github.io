@@ -218,7 +218,8 @@ function renderFarms(db) {
 /* How often farmers used the object: on its own, or as part of other farms (with those farms' counts) */
 function used(o, seenByName) {
   var farms = o.spottedIn || [];
-  if (farms.indexOf(o.name) >= 0) return '<span class="yes">Yes</span>, spotted ' + plural(seenByName[o.name] || 0, 'time');
+  var own = farms.filter(function (n) { return n === o.name || n === o.name + ' (bitten)'; });
+  if (own.length) return '<span class="yes">Yes</span>, spotted ' + plural(own.reduce(function (t, n) { return t + (seenByName[n] || 0); }, 0), 'time') + (own[0] !== o.name ? ' (after a bite)' : '');
   if (farms.length) return 'As part of ' + farms.map(function (n) { return esc(n) + ' (' + plural(seenByName[n] || 0, 'time') + ')'; }).join(', ');
   return '<span class="no">Not yet</span>';
 }
