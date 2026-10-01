@@ -1,18 +1,18 @@
 {
- "updated": "2026-09-30T21:50:24.681Z",
+ "updated": "2026-10-01T01:15:18.136Z",
  "definition": {
   "minHarvests": 10,
   "maxGap": 16,
   "reach": 2
  },
  "totals": {
-  "runs": 46,
-  "generations": 69000,
-  "candidates": 1060,
-  "farmSessions": 1044,
-  "instances": 1025,
-  "surroundingsSessions": 16,
-  "surroundingsHarvests": 7210
+  "runs": 54,
+  "generations": 81000,
+  "candidates": 1261,
+  "farmSessions": 1244,
+  "instances": 1222,
+  "surroundingsSessions": 17,
+  "surroundingsHarvests": 7221
  },
  "farms": [
   {
@@ -78,16 +78,124 @@
     "run": "508739da-glider-rain-farmer-s1-g1500"
    },
    "field": {
-    "instances": 1023,
-    "sessions": 1042,
-    "harvests": 672832,
+    "instances": 1219,
+    "sessions": 1241,
+    "harvests": 800727,
     "longest": 1491,
     "worlds": {
-     "glider-rain": 569,
-     "soup": 473
+     "glider-rain": 673,
+     "soup": 568
     },
     "strategies": {
-     "farmer": 1042
+     "farmer": 1241
+    }
+   }
+  },
+  {
+   "key": "b1,1|2,0;3,0;1,1;3,1;0,2;2,2;0,3;1,3",
+   "id": "f002",
+   "name": "Long ship",
+   "size": 8,
+   "cells": [
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     1,
+     3
+    ]
+   ],
+   "bite": [
+    1,
+    1
+   ],
+   "lab": {
+    "sustains": true,
+    "yield": 1,
+    "period": 1,
+    "mealsPerCycle": 1,
+    "settledAt": 0,
+    "becomes": "Long ship",
+    "becomesCells": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      1,
+      2
+     ],
+     [
+      3,
+      2
+     ],
+     [
+      2,
+      3
+     ],
+     [
+      3,
+      3
+     ]
+    ]
+   },
+   "partial": false,
+   "firstSpotted": {
+    "at": "2026-09-30T18:39:04.547Z",
+    "world": "glider-rain",
+    "strategy": "farmer",
+    "seed": 15,
+    "gen": 989,
+    "run": "508739da-glider-rain-farmer-s15-g1500"
+   },
+   "field": {
+    "instances": 2,
+    "sessions": 2,
+    "harvests": 1247,
+    "longest": 1232,
+    "worlds": {
+     "glider-rain": 1,
+     "soup": 1
+    },
+    "strategies": {
+     "farmer": 2
     }
    }
   },
@@ -192,113 +300,6 @@
     "longest": 1072,
     "worlds": {
      "soup": 1
-    },
-    "strategies": {
-     "farmer": 1
-    }
-   }
-  },
-  {
-   "key": "b1,1|2,0;3,0;1,1;3,1;0,2;2,2;0,3;1,3",
-   "id": "f002",
-   "name": "Long ship",
-   "size": 8,
-   "cells": [
-    [
-     2,
-     0
-    ],
-    [
-     3,
-     0
-    ],
-    [
-     1,
-     1
-    ],
-    [
-     3,
-     1
-    ],
-    [
-     0,
-     2
-    ],
-    [
-     2,
-     2
-    ],
-    [
-     0,
-     3
-    ],
-    [
-     1,
-     3
-    ]
-   ],
-   "bite": [
-    1,
-    1
-   ],
-   "lab": {
-    "sustains": true,
-    "yield": 1,
-    "period": 1,
-    "mealsPerCycle": 1,
-    "settledAt": 0,
-    "becomes": "Long ship",
-    "becomesCells": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      0
-     ],
-     [
-      0,
-      1
-     ],
-     [
-      2,
-      1
-     ],
-     [
-      1,
-      2
-     ],
-     [
-      3,
-      2
-     ],
-     [
-      2,
-      3
-     ],
-     [
-      3,
-      3
-     ]
-    ]
-   },
-   "partial": false,
-   "firstSpotted": {
-    "at": "2026-09-30T18:39:04.547Z",
-    "world": "glider-rain",
-    "strategy": "farmer",
-    "seed": 15,
-    "gen": 989,
-    "run": "508739da-glider-rain-farmer-s15-g1500"
-   },
-   "field": {
-    "instances": 1,
-    "sessions": 1,
-    "harvests": 15,
-    "longest": 15,
-    "worlds": {
-     "glider-rain": 1
     },
     "strategies": {
      "farmer": 1
