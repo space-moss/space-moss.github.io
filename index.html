@@ -344,6 +344,22 @@ a:hover{text-decoration-thickness:2px}
     "variant": "farm-farmer"
    },
    "updated": 1791000000001
+  },
+  {
+   "id": "bending-conways-laws",
+   "title": "Bending Conway's laws",
+   "date": "2026-10-03",
+   "tags": [
+    "game of life",
+    "cellular automata"
+   ],
+   "summary": "The Game of Life's rules have three numbers in them. I moved each one by one to see what breaks, and why Conway's choice works.",
+   "body": "Conway's Game of Life runs on four laws:\n\n- **Underpopulation:** a live cell with fewer than two live neighbours dies.\n- **Survival:** a live cell with two or three live neighbours stays alive.\n- **Overpopulation:** a live cell with more than three live neighbours dies.\n- **Birth:** a dead cell with exactly three live neighbours comes alive.\n\nThere are only three numbers in there: two, three, and three again. I've been building on top of these rules for a while without ever asking why those numbers. So this time I changed them, one at a time, to see what Conway's choice is actually doing.\n\n## A shorter way to write the rules\n\nThe four laws only say two things: which neighbour counts keep a live cell alive, and which counts bring a dead cell to life. Everything else is death, or staying dead. That gives a compact notation, B for birth and S for survival:\n\n```math\nConway's rule:   B3/S23      born with 3,  survives with 2 or 3\n```\n\nWriting it this way makes it obvious how many other rules there are. Each of the nine possible neighbour counts (0 to 8) is either in the birth list or not, and either in the survival list or not:\n\n```math\nnumber of rules = 2^{9} \u00d7 2^{9} = 2^{18} = 262,144\n```\n\nThese are called \"Life-like\" rules. Conway's is one of them.\n\n## Try it\n\nThe figure runs the Game of Life on a random soup. The sliders are the numbers in the four laws. Move one and the same soup restarts under the new rule, so you're always comparing like with like. \"Conway's numbers\" puts everything back.\n\n```viz life-laws\n```\n\n## Moving each number by one\n\nI ran each variant on the same four random soups: 128 \u00d7 128 cells on a wrap-around grid, 35% alive at the start, 600 generations. \"Alive\" is the share of cells alive over the last 100 generations. \"Changing\" is the share that flip each generation, a rough measure of how much is going on.\n\n| Law changed | As B/S | Alive | Changing | What happens |\n|---|---|---|---|---|\n| Conway, as written | B3/S23 | 5.0% | 2.7% | Busy for a long time, then gliders, blinkers and still \"ash\" |\n| Dies of loneliness below **1** (not 2) | B3/S123 | 33.1% | 27.3% | Boils |\n| Dies of loneliness below **3** | B3/S3 | 0.1% | 0.2% | Starves |\n| Never dies of loneliness | B3/S0123 | 37.0% | 24.3% | Boils |\n| Dies of crowding above **2** (not 3) | B3/S2 | 0.4% | 0.4% | Starves, down to sparse blinking ash |\n| Dies of crowding above **4** | B3/S234 | 50.6% | 0.2% | Fills half the world, then freezes |\n| Dies of crowding above **5** | B3/S2345 | 55.9% | 0.0% | Freezes harder |\n| Never dies of crowding | B3/S2345678 | 66.8% | 0.0% | Fills up and stops |\n| Born with exactly **2** (not 3) | B2/S23 | 35.0% | 28.6% | Boils |\n| Born with exactly **4** | B4/S23 | 3.9% | 0.0% | Freezes on the spot: almost nothing is ever born |\n| Born with 3 **or 4** | B34/S23 | 35.6% | 44.0% | Boils |\n| Born with **2 or** 3 | B23/S23 | 38.4% | 48.8% | Boils hardest |\n\nThe same results as a picture. Each dot is one rule, placed by how much of the world is alive and how much of it changes each generation:\n\n```viz life-variants\n```\n\n## What it shows\n\n**Conway's numbers sit on a knife edge.** Every change of one, in either direction, breaks the game, and it breaks in three ways:\n\n- **Loosen the rules for life and it boils.** Let a lonely cell survive with one neighbour, or let a cell be born from two neighbours instead of three, and the world fills with static: a third of it alive and a quarter or more flipping every generation, forever. Nothing holds still long enough to become a structure.\n- **Let crowded cells live and it freezes.** Raise the crowding limit to four and half the world fills in solid, then almost stops changing. More cells survive, but a cell surrounded on all sides has nowhere to go.\n- **Tighten any rule and it starves.** Make cells need three neighbours to survive, or die at more than two, or need four to be born, and almost everything dies within a few hundred generations.\n\nConway's rule is the narrow band in between: sparse (about 5% alive), but never quite still. That's where gliders, oscillators and long, unpredictable stretches of activity live. On the chart, Conway sits just off the bottom-left corner, close to the rules that starve or freeze, and nowhere near the ones that boil. It's barely alive, but it never stops moving.\n\n## Why those numbers?\n\nThis wasn't luck. Martin Gardner's 1970 column, which introduced the game, describes Conway choosing the rules after a long period of experimenting by hand, and lists what he was after. Roughly: no pattern should obviously grow forever, some patterns should look as if they might, and simple starting patterns should keep changing for a long time before they settle. My table is a crude test of exactly that. The boiling rules grow without limit, and the starving and freezing ones settle almost immediately.\n\nMy intuition for why it works:\n\n- **Birth at exactly three is choosy.** A new cell needs a fairly specific arrangement around it. At two, almost any pair of neighbouring cells breeds and growth runs away. At four, it rarely happens in sparse regions, so nothing new gets started.\n- **Survival at two or three means company but not a crowd.** Cells in a thin line or a small cluster survive, and both isolated cells and packed blobs die. That keeps structures small and lets them move: a glider is a shape that keeps rebuilding itself one square over.\n- **The two balance.** Births and deaths roughly cancel out over a sparse world, so activity neither takes over nor fades.\n\n## Further afield\n\nPeople have explored many of the other 262,144 rules, and some have names. The same soups, the same measurements:\n\n| Rule | B/S | Alive | Changing | Character |\n|---|---|---|---|---|\n| HighLife | B36/S23 | 4.8% | 3.0% | Almost identical to Conway's, plus a pattern that copies itself |\n| Seeds | B2/S | 21.1% | 42.2% | Every live cell dies each generation, yet it never stops |\n| Long Life | B345/S5 | 33.6% | 67.0% | Boils hardest of all |\n| 2x2 | B36/S125 | 14.3% | 13.2% | Activity built out of 2 \u00d7 2 tiles |\n| Maze | B3/S12345 | 55.3% | 0.0% | Grows corridors, then freezes |\n| Life without Death | B3/S012345678 | 65.8% | 0.0% | Nothing ever dies, so it fills in |\n| Coral | B3/S45678 | 83.3% | 0.8% | Slowly grows into a solid reef |\n\nTwo of them surprised me.\n\n**Day & Night** (B3678/S34678) is symmetric: swap every live cell for a dead one and the rule behaves exactly the same. So it doesn't care what's alive, only which side is the majority. From a 35% soup it shrank to 4%. From a 50% soup it held at 49%, in big blobs.\n\n**Replicator** (B1357/S1357) makes every pattern copy itself. A cell is alive next generation if an odd number of its neighbours are alive, whatever it was before. On my 128-wide grid the whole world went blank, every time. That turns out to be exact: on a wrap-around grid this rule wipes out any starting pattern in half the grid's width, so 64 generations on a 128-wide grid and 32 on a 64-wide one. On a 127-wide grid it boils at 50% forever. The shape of the board decided the outcome.\n\n## Other ways to bend it\n\nThe numbers aren't the only thing you can change:\n\n- **Which cells count as neighbours.** Four instead of eight, a hexagonal grid with six, or every cell within a bigger radius (\"Larger than Life\").\n- **More than two states.** In \"Generations\" rules like Brian's Brain (B2/S/3), a dying cell lingers for a generation before it goes, which turns everything into waves and spaceships.\n- **Which neighbours, not just how many.** Rules that care about the arrangement of the neighbours, not only their count, give a much bigger family to explore.\n- **Chance.** Births and deaths happen with some probability, so you can watch structures slowly erode.\n- **Timing.** Update one cell at a time instead of all at once. A lot of Life's clockwork, gliders included, falls apart.\n- **The board.** A wrap-around grid, a Klein bottle, hard walls. Replicator shows this can decide the result.\n- **Several species.** Coloured cells that compete or mix (Immigration, QuadLife).\n- **Continuous versions.** SmoothLife and Lenia, where cells aren't just on or off, grow creatures that look alive.\n\n## Caveats\n\n- Four soups, one grid size and one starting density. Some rules behave differently from denser or sparser soups, as Day & Night shows.\n- \"Alive\" and \"changing\" are blunt. They can't tell a glider from noise, or a long-lived chaotic region from one that's about to die.\n- I left out rules with B0, where empty cells come alive with no neighbours at all. Empty space flashes on and off every generation, and they need their own treatment.\n\n## What I'd try next\n\n- Search all 262,144 rules automatically for ones that behave like Conway's (sparse, but never still) and see how rare that is.\n- Try the same one-number changes on a hexagonal grid, where every cell has six neighbours.\n- Update cells one at a time and see which of Conway's famous patterns survive.\n",
+   "backdrop": {
+    "effect": "life",
+    "formation": "cycle"
+   },
+   "updated": 1791042392499
   }
  ]
 }</script>
@@ -636,7 +652,7 @@ function showEditor(id) {
     '<div class="field"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem"><label for="f-body">Body</label>' +
     '<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" aria-selected="true" id="t-write">Write</button><button type="button" class="tab" role="tab" aria-selected="false" id="t-prev">Preview</button></div></div>' +
     '<textarea id="f-body" spellcheck="true">' + esc(e.body) + '</textarea><div class="preview prose" id="pv" hidden></div>' +
-    '<span class="hint">Markdown: # headings, **bold**, *italic*, `code`, ``` code blocks, lists, &gt; quotes, [links](https://…), tables. Images must be https links or data URLs. Live figures: ```viz motion-distortion```, ```viz ransac```, ```viz lidar-life```, ```viz rover-hunt```, ```viz rover-farm```. Equations: a ```math block, one equation per line, with x_{sub} and x^{sup}.</span></div>' +
+    '<span class="hint">Markdown: # headings, **bold**, *italic*, `code`, ``` code blocks, lists, &gt; quotes, [links](https://…), tables. Images must be https links or data URLs. Live figures: ```viz motion-distortion```, ```viz ransac```, ```viz lidar-life```, ```viz rover-hunt```, ```viz rover-farm```, ```viz life-laws```, ```viz life-variants```. Equations: a ```math block, one equation per line, with x_{sub} and x^{sup}.</span></div>' +
     '<p class="error-text" id="err" hidden></p>' +
     '<div class="form-actions"><button class="btn primary" type="submit" id="pub">' + (base ? 'Publish changes' : 'Publish entry') + '</button>' +
     '<a class="btn" href="' + (base ? '#/e/' + esc(base.id) : '#/') + '">Cancel</a><span class="note">Publishing updates the live site for everyone with the link.</span></div>' +
@@ -827,7 +843,7 @@ window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT =
           legend: F.legend.map(function (l) { return { color: l[0], label: l[1] }; }) });
       }
       function setup(F) {
-        var w = window.innerWidth, h = window.innerHeight, portrait = h > w * 1.1;
+        var w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight), portrait = h > w * 1.1;
         var shortPx = portrait ? w : h, cell = Math.min(6, Math.max(1, shortPx / F.fit));
         var cols = Math.ceil(w / cell), rows = Math.ceil(h / cell);
         var vu = portrait ? rows : cols, vv = portrait ? cols : rows, p = P(F.pat), L = F.layout(vu, vv, p);
@@ -905,7 +921,7 @@ window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT =
         next: function () { if (!pinned) advance(); },
         resize: function () {
           if (!S) return;
-          var w = window.innerWidth, h = window.innerHeight, portrait = h > w * 1.1;
+          var w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight), portrait = h > w * 1.1;
           var pw = S.cols * S.cell, ph = S.rows * S.cell;
           if (portrait !== S.portrait || Math.abs(w - pw) / pw > 0.12 || h > ph * 1.12 || h < ph * 0.7) { host.hide(); setup(S.F); }
         },
@@ -991,7 +1007,7 @@ window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT =
       var cam = {};
 
       function size() {
-        W = Math.ceil(window.innerWidth); H = Math.ceil(window.innerHeight);
+        W = Math.max(1, Math.ceil(window.innerWidth)); H = Math.max(1, Math.ceil(window.innerHeight));
         canvas.width = W; canvas.height = H; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
         img = ctx.createImageData(W, H); buf = new Uint32Array(img.data.buffer); dirty = true;
       }
@@ -1670,7 +1686,7 @@ Backdrop.register('rover', {
     function farming() { return /^farm-/.test(variant); }
     function draw() { if (farming()) drawFarm(sim, ctx, buf, s); else drawRover(sim, ctx, buf.off, buf.offCtx, s, buf.o); }
     function setup() {
-      var w = window.innerWidth, h = window.innerHeight; s = Math.max(4, Math.round(Math.min(w, h) / 150));
+      var w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight); s = Math.max(4, Math.round(Math.min(w, h) / 150));
       var cols = Math.ceil(w / s), rows = Math.ceil(h / s), range = Math.round(Math.min(cols, rows) * 0.3);
       canvas.width = cols * s; canvas.height = rows * s; canvas.style.width = cols * s + 'px'; canvas.style.height = rows * s + 'px';
       if (farming()) sim = new FarmSim(cols, rows, { world: 'soup', strategy: variant.slice(5), range: 20, startX: h > w ? 0.5 : 0.72 });
@@ -2055,6 +2071,161 @@ VIZ['rover-farm'] = { mount: function (fig, visible) {
     if (t - capT > 500) { capT = t; cap.textContent = farmStatsText(sim); }
   });
   return function () { stop(); ro.disconnect(); if (cancelBench) cancelBench(); };
+} };
+
+/* 6. Bending Conway's laws: the same soup under different numbers */
+/* One generation of a Life-like rule on a wrapping W x H grid. born/surv are bit masks (bit n set: n neighbours). */
+function lifeLikeStep(a, b, W, H, born, surv) {
+  var alive = 0, changed = 0;
+  for (var y = 0; y < H; y++) { var up = ((y + H - 1) % H) * W, md = y * W, dn = ((y + 1) % H) * W;
+    for (var x = 0; x < W; x++) { var l = x === 0 ? W - 1 : x - 1, r = x === W - 1 ? 0 : x + 1, c = md + x;
+      var n = a[up + l] + a[up + x] + a[up + r] + a[md + l] + a[md + r] + a[dn + l] + a[dn + x] + a[dn + r];
+      var v = ((a[c] ? surv : born) >> n) & 1; b[c] = v; alive += v; changed += v !== a[c]; } }
+  return { alive: alive, changed: changed };
+}
+function lawMasks(lonely, crowd, bornMin, bornMax) {   // survive with lonely..crowd neighbours, born with bornMin..bornMax
+  var born = 0, surv = 0, n;
+  for (n = bornMin; n <= bornMax; n++) born |= 1 << n;
+  for (n = lonely; n <= crowd; n++) surv |= 1 << n;
+  return { born: born, surv: surv };
+}
+function ruleName(m) { var b = '', s = ''; for (var n = 0; n <= 8; n++) { if (m.born >> n & 1) b += n; if (m.surv >> n & 1) s += n; } return 'B' + b + '/S' + s; }
+
+VIZ['life-laws'] = { mount: function (fig, visible) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage'; var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var ctrl = vizControls(fig);
+  function slider(key, label, min, max, val) { return '<label>' + label + ' <input type="range" min="' + min + '" max="' + max + '" step="1" value="' + val + '" data-k="' + key + '"> <output data-o="' + key + '">' + val + '</output></label>'; }
+  ctrl.innerHTML = slider('lonely', 'Dies of loneliness below', 0, 8, 2) + slider('crowd', 'Dies of crowding above', 0, 8, 3) +
+    slider('bmin', 'Born with at least', 1, 8, 3) + slider('bmax', 'Born with at most', 1, 8, 3) +
+    '<button type="button" class="btn" data-a="conway">Conway’s numbers</button><button type="button" class="btn" data-a="soup">New soup</button>' +
+    '<button type="button" class="btn" data-a="run"></button><button type="button" class="btn" data-a="step">Step</button>';
+  var laws = vizCaption(fig, ''), cap = vizCaption(fig, '');
+  var q = function (sel) { return ctrl.querySelector(sel); }, ctx = c.getContext('2d'), W, H, s, a, b, off, offCtx, img, px, trail;
+  var seed = 1, gen = 0, stats = { alive: 0, changed: 0 }, masks, running = !REDUCED, acc = 0, capT = 0;
+  var LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1, lut = new Uint32Array(32);
+  for (var l = 0; l < 32; l++) { var al = l === 31 ? 1 : Math.pow(l / 31, 2) * 0.22, rr = Math.round(31 + (111 - 31) * al), gg = Math.round(31 + (181 - 31) * al), bb = Math.round(29 + (125 - 29) * al);
+    lut[l] = LE ? (255 << 24 | bb << 16 | gg << 8 | rr) >>> 0 : (rr << 24 | gg << 16 | bb << 8 | 255) >>> 0; }
+  function val(k) { return +q('[data-k="' + k + '"]').value; }
+  function size() { var w = wrap.clientWidth || 600; s = Math.max(3, Math.floor(w / 160)); W = Math.floor(w / s); H = Math.round(W * 0.55);
+    c.width = W * s; c.height = H * s; c.style.width = W * s + 'px'; c.style.height = H * s + 'px';
+    off = document.createElement('canvas'); off.width = W; off.height = H; offCtx = off.getContext('2d'); img = offCtx.createImageData(W, H); px = new Uint32Array(img.data.buffer); }
+  // the same soup every time for a given seed, so different rules start from the same cells
+  function reset() {
+    var rnd = mulberry32(seed * 7919); a = new Uint8Array(W * H); b = new Uint8Array(W * H); trail = new Uint8Array(W * H);
+    for (var i = 0; i < W * H; i++) a[i] = rnd() < 0.35 ? 1 : 0;
+    gen = 0; stats = { alive: 0, changed: 0 }; masks = lawMasks(val('lonely'), val('crowd'), val('bmin'), val('bmax')); describe(); draw(); text();
+  }
+  function step() { var st = lifeLikeStep(a, b, W, H, masks.born, masks.surv), t = a; a = b; b = t; gen++; stats = st; }
+  function draw() {
+    for (var i = 0; i < W * H; i++) { if (a[i]) trail[i] = 31; else if (trail[i]) trail[i]--; px[i] = lut[trail[i]]; }
+    offCtx.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, W * s, H * s);
+  }
+  function describe() {
+    var lo = val('lonely'), hi = val('crowd'), b0 = val('bmin'), b1 = val('bmax');
+    var nb = function (n) { return n === 1 ? 'neighbour' : 'neighbours'; };
+    var span = function (x, y) { return x === y ? 'exactly ' + x : y === x + 1 ? x + ' or ' + y : x + ' to ' + y; };
+    var survive = lo > hi ? 'No live cell survives, whatever its neighbours.' :
+      (lo > 0 ? 'A live cell with fewer than ' + lo + ' live ' + nb(lo) + ' dies. ' : 'No cell dies of loneliness. ') +
+      'With ' + span(lo, hi) + ' it survives. ' + (hi < 8 ? 'With more than ' + hi + ' it dies.' : 'No cell dies of crowding.');
+    var birth = b0 > b1 ? 'No dead cell ever comes alive.' : 'A dead cell with ' + span(b0, b1) + ' live ' + nb(b1) + ' comes alive.';
+    var conway = lo === 2 && hi === 3 && b0 === 3 && b1 === 3;
+    laws.innerHTML = '<strong>' + ruleName(masks) + (conway ? ', Conway’s rule' : '') + '.</strong> ' + esc(survive) + ' ' + esc(birth);
+  }
+  function text() {
+    var n = W * H;
+    cap.textContent = 'Generation ' + gen.toLocaleString() + '. ' + (100 * (gen ? stats.alive : a.reduce(function (t, v) { return t + v; }, 0)) / n).toFixed(1) + '% of cells alive' +
+      (gen ? ', ' + (100 * stats.changed / n).toFixed(1) + '% changed in the last generation.' : '. The soup starts 35% alive.');
+    q('[data-a="run"]').textContent = running ? 'Pause' : 'Run';
+  }
+  ctrl.addEventListener('input', function (ev) {
+    var k = ev.target.getAttribute('data-k'); if (!k) return;
+    if (k === 'bmin' && val('bmin') > val('bmax')) q('[data-k="bmax"]').value = val('bmin');
+    if (k === 'bmax' && val('bmax') < val('bmin')) q('[data-k="bmin"]').value = val('bmax');
+    ['lonely', 'crowd', 'bmin', 'bmax'].forEach(function (key) { q('[data-o="' + key + '"]').textContent = val(key); });
+    reset();
+  });
+  ctrl.addEventListener('click', function (ev) {
+    var act = ev.target.getAttribute('data-a'); if (!act) return;
+    if (act === 'conway') { [['lonely', 2], ['crowd', 3], ['bmin', 3], ['bmax', 3]].forEach(function (p) { q('[data-k="' + p[0] + '"]').value = p[1]; q('[data-o="' + p[0] + '"]').textContent = p[1]; }); reset(); }
+    else if (act === 'soup') { seed++; reset(); }
+    else if (act === 'run') { running = !running; text(); }
+    else if (act === 'step') { running = false; step(); draw(); text(); }
+  });
+  size(); reset();
+  var ro = new ResizeObserver(function () { var w = wrap.clientWidth; if (w && Math.abs(w - W * s) > s * 2) { size(); reset(); } }); ro.observe(wrap);
+  var stop = loop(visible, function (dt, t) {
+    if (running) { acc += dt * 15; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) step(); if (n) draw(); }
+    if (t - capT > 250) { capT = t; text(); }
+  });
+  return function () { stop(); ro.disconnect(); };
+} };
+
+/* 7. Where each variant ends up: share alive against share changing, measured on random soups */
+var LAW_VARIANTS = [
+  // [label, lonely, crowd, bornMin, bornMax, alive %, changing %] from 4 soups, 128 x 128, 35% alive, 600 generations
+  ['Conway', 2, 3, 3, 3, 5.0, 2.7],
+  ['Dies of loneliness below 1', 1, 3, 3, 3, 33.1, 27.3], ['Dies of loneliness below 3', 3, 3, 3, 3, 0.1, 0.2], ['Never dies of loneliness', 0, 3, 3, 3, 37.0, 24.3],
+  ['Dies of crowding above 2', 2, 2, 3, 3, 0.4, 0.4], ['Dies of crowding above 4', 2, 4, 3, 3, 50.6, 0.2], ['Dies of crowding above 5', 2, 5, 3, 3, 55.9, 0.0], ['Never dies of crowding', 2, 8, 3, 3, 66.8, 0.0],
+  ['Born with exactly 2', 2, 3, 2, 2, 35.0, 28.6], ['Born with exactly 4', 2, 3, 4, 4, 3.9, 0.0], ['Born with 3 or 4', 2, 3, 3, 4, 35.6, 44.0], ['Born with 2 or 3', 2, 3, 2, 3, 38.4, 48.8]
+];
+function variantKind(alive, changing) { return alive < 1 ? 'starves' : changing < 1 ? 'freezes' : changing > 15 ? 'boils' : 'lives'; }
+var KIND_COLORS = { lives: '#e6b85c', boils: '#e0685f', freezes: '#74a3e3', starves: '#85837a' };
+VIZ['life-variants'] = { mount: function (fig) {
+  var holder = document.createElement('div'); holder.className = 'viz-stage'; holder.style.padding = '0.75rem 0.5rem 0'; fig.appendChild(holder);
+  var cv = document.createElement('canvas'); holder.appendChild(cv); var ctx = cv.getContext('2d');
+  var read = vizCaption(fig, ''), ctrl = vizControls(fig);
+  ctrl.innerHTML = '<span class="viz-hint">Measured offline on 4 random soups.</span><button type="button" class="btn" data-m>Measure again in your browser</button>';
+  var pts = LAW_VARIANTS.map(function (v) { return { label: v[0], rule: ruleName(lawMasks(v[1], v[2], v[3], v[4])), alive: v[5], change: v[6], spec: v }; }), hover = -1, geom = null, busy = false;
+  function draw() {
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = holder.clientWidth - 16 || 560, h = Math.round(Math.min(380, Math.max(240, w * 0.6)));
+    cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + 'px'; cv.style.height = h + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var L = 44, R = 14, T = 10, B = 38, pw = w - L - R, ph = h - T - B, xMax = 50, yMax = 70, font = getComputedStyle(document.body).getPropertyValue('--sans');
+    var X = function (v) { return L + pw * v / xMax; }, Y = function (v) { return T + ph * (1 - v / yMax); };
+    geom = { X: X, Y: Y };
+    ctx.clearRect(0, 0, w, h); ctx.font = '11px ' + font; ctx.lineWidth = 1;
+    for (var gx = 0; gx <= xMax; gx += 10) { var x = Math.round(X(gx)) + 0.5; ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke(); ctx.fillStyle = '#85837a'; ctx.textAlign = 'center'; ctx.fillText(gx + '%', x, T + ph + 15); }
+    for (var gy = 0; gy <= yMax; gy += 10) { var y = Math.round(Y(gy)) + 0.5; ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke(); ctx.fillStyle = '#85837a'; ctx.textAlign = 'right'; ctx.fillText(gy + '%', L - 6, y + 4); }
+    ctx.fillStyle = '#b1afa4'; ctx.textAlign = 'center'; ctx.fillText('Cells changing each generation', L + pw / 2, h - 4);
+    ctx.save(); ctx.translate(11, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Cells alive', 0, 0); ctx.restore();
+    pts.forEach(function (p, i) { var k = variantKind(p.alive, p.change), conway = i === 0, r = conway ? 6 : 4.5;
+      ctx.fillStyle = KIND_COLORS[k]; ctx.beginPath(); ctx.arc(X(p.change), Y(p.alive), r, 0, Math.PI * 2); ctx.fill();
+      if (i === hover || conway) { ctx.strokeStyle = '#f0eee6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(p.change), Y(p.alive), r + 3, 0, Math.PI * 2); ctx.stroke(); }
+      if (conway) { ctx.fillStyle = '#f0eee6'; ctx.textAlign = 'left'; ctx.fillText('Conway', X(p.change) + 11, Y(p.alive) + 4); } });
+    var p = pts[hover];
+    read.innerHTML = p ? '<strong>' + esc(p.label) + '</strong> (' + esc(p.rule) + '): ' + p.alive.toFixed(1) + '% alive, ' + p.change.toFixed(1) + '% changing each generation. It ' + variantKind(p.alive, p.change) + '.'
+      : '<span class="chart-legend">' + ['lives', 'boils', 'freezes', 'starves'].map(function (k) { return '<span><i style="background:' + KIND_COLORS[k] + '"></i>' + { lives: 'Lives (Conway)', boils: 'Boils', freezes: 'Freezes', starves: 'Starves' }[k] + '</span>'; }).join('') + '</span> Hover or tap a point for its rule.';
+  }
+  function nearest(ev) { var r = cv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top, best = -1, bd = 18 * 18;
+    pts.forEach(function (p, i) { var dx = geom.X(p.change) - mx, dy = geom.Y(p.alive) - my, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }); return best; }
+  cv.addEventListener('pointermove', function (ev) { var h2 = nearest(ev); if (h2 !== hover) { hover = h2; draw(); } });
+  cv.addEventListener('pointerdown', function (ev) { hover = nearest(ev); draw(); });
+  cv.addEventListener('pointerleave', function () { hover = -1; draw(); });
+  cv.setAttribute('role', 'img');
+  cv.setAttribute('aria-label', 'Scatter of each rule variant by cells changing per generation and cells alive. ' + pts.map(function (p) { return p.label + ': ' + p.alive + '% alive, ' + p.change + '% changing'; }).join('; ') + '.');
+  // re-measure: the same procedure in the reader's browser, in small slices so the page stays responsive
+  var q = function (sel) { return ctrl.querySelector(sel); }, cancelled = false;
+  q('[data-m]').onclick = function () {
+    if (busy) return; busy = true; var btn = q('[data-m]'), hint = ctrl.querySelector('.viz-hint'); btn.disabled = true;
+    var N = 128, GENS = 600, SEEDS = 2, jobs = [], j = 0, cur = null, sums = pts.map(function () { return { alive: 0, change: 0, n: 0 }; });
+    pts.forEach(function (p, i) { for (var sd = 1; sd <= SEEDS; sd++) jobs.push({ i: i, seed: sd }); });
+    (function tick() {
+      if (cancelled) return; var t0 = Date.now();
+      while (Date.now() - t0 < 25) {
+        if (!cur) { if (j >= jobs.length) break; var job = jobs[j], rnd = mulberry32(job.seed * 104729), sp = pts[job.i].spec, m = lawMasks(sp[1], sp[2], sp[3], sp[4]);
+          cur = { job: job, m: m, a: new Uint8Array(N * N), b: new Uint8Array(N * N), g: 0, al: 0, ch: 0 };
+          for (var k = 0; k < N * N; k++) cur.a[k] = rnd() < 0.35 ? 1 : 0; }
+        var st = lifeLikeStep(cur.a, cur.b, N, N, cur.m.born, cur.m.surv), tmp = cur.a; cur.a = cur.b; cur.b = tmp; cur.g++;
+        if (cur.g > GENS - 100) { cur.al += st.alive / (N * N); cur.ch += st.changed / (N * N); }
+        if (cur.g >= GENS) { var sm = sums[cur.job.i]; sm.alive += 100 * cur.al / 100; sm.change += 100 * cur.ch / 100; sm.n++; cur = null; j++; }
+      }
+      hint.textContent = j < jobs.length ? 'Measuring: ' + Math.round(100 * j / jobs.length) + '%' : 'Measured in your browser on 2 random soups.';
+      if (j < jobs.length) { setTimeout(tick, 0); return; }
+      pts.forEach(function (p, i) { p.alive = sums[i].alive / sums[i].n; p.change = sums[i].change / sums[i].n; });
+      busy = false; btn.disabled = false; draw();
+    })();
+  };
+  var ro = new ResizeObserver(draw); ro.observe(holder); draw();
+  return function () { cancelled = true; ro.disconnect(); };
 } };
 
 window.addEventListener('hashchange', route);
