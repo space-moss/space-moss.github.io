@@ -1,18 +1,18 @@
 {
- "updated": "2026-10-04T08:22:11.727Z",
+ "updated": "2026-10-04T14:12:53.100Z",
  "definition": {
   "minHarvests": 10,
   "maxGap": 16,
   "reach": 2
  },
  "totals": {
-  "runs": 294,
-  "generations": 481000,
-  "candidates": 6139,
-  "farmSessions": 6023,
-  "instances": 5907,
-  "surroundingsSessions": 116,
-  "surroundingsHarvests": 36209
+  "runs": 302,
+  "generations": 493000,
+  "candidates": 6344,
+  "farmSessions": 6223,
+  "instances": 6106,
+  "surroundingsSessions": 121,
+  "surroundingsHarvests": 36265
  },
  "farms": [
   {
@@ -78,16 +78,16 @@
     "run": "508739da-glider-rain-farmer-s1-g1500"
    },
    "field": {
-    "instances": 5896,
-    "sessions": 6012,
-    "harvests": 3947913,
+    "instances": 6094,
+    "sessions": 6211,
+    "harvests": 4074380,
     "longest": 3971,
     "worlds": {
-     "glider-rain": 3720,
-     "soup": 2292
+     "glider-rain": 3843,
+     "soup": 2368
     },
     "strategies": {
-     "farmer": 5918,
+     "farmer": 6117,
      "ambusher": 10,
      "greedy": 84
     }
@@ -188,16 +188,16 @@
     "run": "508739da-glider-rain-farmer-s15-g1500"
    },
    "field": {
-    "instances": 6,
-    "sessions": 6,
-    "harvests": 1475,
+    "instances": 7,
+    "sessions": 7,
+    "harvests": 1503,
     "longest": 1232,
     "worlds": {
      "glider-rain": 4,
-     "soup": 2
+     "soup": 3
     },
     "strategies": {
-     "farmer": 6
+     "farmer": 7
     }
    }
   },
