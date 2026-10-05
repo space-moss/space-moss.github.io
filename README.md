@@ -34,6 +34,22 @@ node tools/farm-parse.js --rebuild              # recount everything from the lo
 
 The live site also updates by itself: `.github/workflows/spot-farms.yml` runs the logger on 4 new seeds per world every 6 hours, commits `farms.json` (and `farm-runs.json`, the list of runs already counted), and asks GitHub Pages to rebuild. You can also start it from the repository's **Actions** tab with **Run workflow**. The workflow pushes to `main`, so pull before you push your own changes.
 
+## Rule survey
+
+`tools/rule-survey.js` runs every Life-like rule (which neighbour counts bring a cell to life, and which keep it alive) on the same random soups and logs how each one behaves. It covers the square grid (8 neighbours, 262,144 rules) and the hexagonal grid (6 neighbours, 16,384 rules), and uses every CPU core. The entries "Bending Conway's laws" and "Life on hexagons" are built on it.
+
+```
+node tools/rule-survey.js run                         # all 262,144 square rules (about 20 minutes on 20 threads); resumes if stopped
+node tools/rule-survey.js run --grid hex              # all 16,384 hex rules (about a minute)
+node tools/rule-survey.js run --sample 4000           # a quick preview spread across the whole space
+node tools/rule-survey.js run --rules B3/S23,B36/S23  # just these rules
+node tools/rule-survey.js ships --grid hex --class lives   # look for spaceships (gliders) in every rule of a class
+node tools/rule-survey.js summary --md logs/square-summary.md   # tables for an article: classes, one-number changes, the rules that live
+node tools/rule-survey.js export --grid hex           # data/rules-hex.json, which the hex article's chart reads
+```
+
+Each soup is 60 × 60 cells on a wrap-around grid, 35% alive at the start, run for 400 generations (all adjustable with `--size`, `--gens`, `--seeds`, `--fill`). 60 isn't a power of two on purpose, because parity rules like B1357/S1357 wipe out any pattern on grids that are. The log in `logs/` (ignored by git) has one JSON line per rule: its class (lives, boils, dense, oscillates, freezes, dies), the share of cells alive and changing over the last quarter of the run, the peak, and for each soup whether it died out or settled into a cycle, when, and with what period.
+
 ## Rover Colony
 
 `game.js` is a playable game built on the same world: you drive a rover, build children, and give them roles (farmer, scout, grazer, sentry). It opens from the **Play Rover Colony** button on the home page, or at `#/play`. It's separate from `index.html`, which only loads it and adds the button and the route. `GAME-DESIGN.md` explains the rules and lists roles, rule changes and modes to try next.

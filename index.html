@@ -151,6 +151,7 @@ a:hover{text-decoration-thickness:2px}
 .viz-controls output{color:var(--text);font-variant-numeric:tabular-nums;min-width:4.5rem}
 .viz-controls .btn{padding:.45rem .8rem;font-size:.85rem}
 .viz-hint{color:var(--faint)}
+.viz-off-sliders label:has(input[type=range]){opacity:.45}
 .viz-controls select{font:inherit;color:var(--text);background:#262624;border:1px solid var(--line-strong);border-radius:8px;padding:.35rem .5rem}
 .viz-table{padding:0 1rem 1rem;font-family:var(--sans);font-size:.88rem;color:var(--muted)}
 .viz-table:empty{display:none}
@@ -210,6 +211,26 @@ a:hover{text-decoration-thickness:2px}
 .colophon p{max-width:44rem;margin:0 0 .8rem}
 .colophon .legend{margin-bottom:1rem}
 
+/* the rule bar for the "rules" background */
+.rulebar{position:fixed;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom,0px));z-index:4;width:min(27rem,calc(100% - 2rem));
+  background:rgba(31,31,29,.92);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid var(--line-strong);border-radius:14px;
+  font-family:var(--sans);font-size:.85rem;color:var(--muted);padding:.6rem .75rem;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.rulebar.closed{width:auto}
+.rulebar-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.3rem .8rem}
+.rulebar-toggle{font:inherit;color:var(--muted);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.rulebar-toggle b{color:var(--text);font-weight:500}
+.rulebar-toggle::after{content:" ▾";color:var(--faint)}
+.rulebar.closed .rulebar-toggle::after{content:" ▸"}
+.rulebar.closed .rulebar-body{display:none}
+.rulebar-stats{font-variant-numeric:tabular-nums;color:var(--faint)}
+.rulebar-text{margin:.45rem 0 .55rem}
+.rulebar-btns{display:flex;flex-wrap:wrap;gap:.35rem}
+.rulebar-btn{font:500 .8rem/1 var(--sans);color:var(--muted);background:rgba(38,38,36,.85);border:1px solid var(--line);border-radius:999px;padding:.4rem .65rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
+.rulebar-btn i{width:.55rem;height:.55rem;border-radius:2px;display:inline-block}
+.rulebar-btn:hover{background:var(--raise);color:var(--text)}
+.rulebar-btn[aria-pressed="true"]{color:var(--text);border-color:var(--text);background:var(--raise)}
+.rulebar-foot{display:flex;flex-wrap:wrap;gap:.3rem 1rem;margin:.6rem 0 0;color:var(--faint);font-size:.8rem}
+@media (max-width:640px){.rulebar{right:.5rem;left:.5rem;width:auto;bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}.rulebar.closed{left:auto}}
 #toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));transform:translate(-50%,1rem);
   background:var(--text);color:#1f1e1c;font:500 .92rem var(--sans);padding:.7rem 1.1rem;border-radius:999px;z-index:5;
   opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 2rem)}
@@ -354,12 +375,29 @@ a:hover{text-decoration-thickness:2px}
     "cellular automata"
    ],
    "summary": "The Game of Life's rules have three numbers in them. I moved each one by one to see what breaks, and why Conway's choice works.",
-   "body": "Conway's Game of Life runs on four laws:\n\n- **Underpopulation:** a live cell with fewer than two live neighbours dies.\n- **Survival:** a live cell with two or three live neighbours stays alive.\n- **Overpopulation:** a live cell with more than three live neighbours dies.\n- **Birth:** a dead cell with exactly three live neighbours comes alive.\n\nThere are only three numbers in there: two, three, and three again. I've been building on top of these rules for a while without ever asking why those numbers. So this time I changed them, one at a time, to see what Conway's choice is actually doing.\n\n## A shorter way to write the rules\n\nThe four laws only say two things: which neighbour counts keep a live cell alive, and which counts bring a dead cell to life. Everything else is death, or staying dead. That gives a compact notation, B for birth and S for survival:\n\n```math\nConway's rule:   B3/S23      born with 3,  survives with 2 or 3\n```\n\nWriting it this way makes it obvious how many other rules there are. Each of the nine possible neighbour counts (0 to 8) is either in the birth list or not, and either in the survival list or not:\n\n```math\nnumber of rules = 2^{9} \u00d7 2^{9} = 2^{18} = 262,144\n```\n\nThese are called \"Life-like\" rules. Conway's is one of them.\n\n## Try it\n\nThe figure runs the Game of Life on a random soup. The sliders are the numbers in the four laws. Move one and the same soup restarts under the new rule, so you're always comparing like with like. \"Conway's numbers\" puts everything back.\n\n```viz life-laws\n```\n\n## Moving each number by one\n\nI ran each variant on the same four random soups: 128 \u00d7 128 cells on a wrap-around grid, 35% alive at the start, 600 generations. \"Alive\" is the share of cells alive over the last 100 generations. \"Changing\" is the share that flip each generation, a rough measure of how much is going on.\n\n| Law changed | As B/S | Alive | Changing | What happens |\n|---|---|---|---|---|\n| Conway, as written | B3/S23 | 5.0% | 2.7% | Busy for a long time, then gliders, blinkers and still \"ash\" |\n| Dies of loneliness below **1** (not 2) | B3/S123 | 33.1% | 27.3% | Boils |\n| Dies of loneliness below **3** | B3/S3 | 0.1% | 0.2% | Starves |\n| Never dies of loneliness | B3/S0123 | 37.0% | 24.3% | Boils |\n| Dies of crowding above **2** (not 3) | B3/S2 | 0.4% | 0.4% | Starves, down to sparse blinking ash |\n| Dies of crowding above **4** | B3/S234 | 50.6% | 0.2% | Fills half the world, then freezes |\n| Dies of crowding above **5** | B3/S2345 | 55.9% | 0.0% | Freezes harder |\n| Never dies of crowding | B3/S2345678 | 66.8% | 0.0% | Fills up and stops |\n| Born with exactly **2** (not 3) | B2/S23 | 35.0% | 28.6% | Boils |\n| Born with exactly **4** | B4/S23 | 3.9% | 0.0% | Freezes on the spot: almost nothing is ever born |\n| Born with 3 **or 4** | B34/S23 | 35.6% | 44.0% | Boils |\n| Born with **2 or** 3 | B23/S23 | 38.4% | 48.8% | Boils hardest |\n\nThe same results as a picture. Each dot is one rule, placed by how much of the world is alive and how much of it changes each generation:\n\n```viz life-variants\n```\n\n## What it shows\n\n**Conway's numbers sit on a knife edge.** Every change of one, in either direction, breaks the game, and it breaks in three ways:\n\n- **Loosen the rules for life and it boils.** Let a lonely cell survive with one neighbour, or let a cell be born from two neighbours instead of three, and the world fills with static: a third of it alive and a quarter or more flipping every generation, forever. Nothing holds still long enough to become a structure.\n- **Let crowded cells live and it freezes.** Raise the crowding limit to four and half the world fills in solid, then almost stops changing. More cells survive, but a cell surrounded on all sides has nowhere to go.\n- **Tighten any rule and it starves.** Make cells need three neighbours to survive, or die at more than two, or need four to be born, and almost everything dies within a few hundred generations.\n\nConway's rule is the narrow band in between: sparse (about 5% alive), but never quite still. That's where gliders, oscillators and long, unpredictable stretches of activity live. On the chart, Conway sits just off the bottom-left corner, close to the rules that starve or freeze, and nowhere near the ones that boil. It's barely alive, but it never stops moving.\n\n## Why those numbers?\n\nThis wasn't luck. Martin Gardner's 1970 column, which introduced the game, describes Conway choosing the rules after a long period of experimenting by hand, and lists what he was after. Roughly: no pattern should obviously grow forever, some patterns should look as if they might, and simple starting patterns should keep changing for a long time before they settle. My table is a crude test of exactly that. The boiling rules grow without limit, and the starving and freezing ones settle almost immediately.\n\nMy intuition for why it works:\n\n- **Birth at exactly three is choosy.** A new cell needs a fairly specific arrangement around it. At two, almost any pair of neighbouring cells breeds and growth runs away. At four, it rarely happens in sparse regions, so nothing new gets started.\n- **Survival at two or three means company but not a crowd.** Cells in a thin line or a small cluster survive, and both isolated cells and packed blobs die. That keeps structures small and lets them move: a glider is a shape that keeps rebuilding itself one square over.\n- **The two balance.** Births and deaths roughly cancel out over a sparse world, so activity neither takes over nor fades.\n\n## Further afield\n\nPeople have explored many of the other 262,144 rules, and some have names. The same soups, the same measurements:\n\n| Rule | B/S | Alive | Changing | Character |\n|---|---|---|---|---|\n| HighLife | B36/S23 | 4.8% | 3.0% | Almost identical to Conway's, plus a pattern that copies itself |\n| Seeds | B2/S | 21.1% | 42.2% | Every live cell dies each generation, yet it never stops |\n| Long Life | B345/S5 | 33.6% | 67.0% | Boils hardest of all |\n| 2x2 | B36/S125 | 14.3% | 13.2% | Activity built out of 2 \u00d7 2 tiles |\n| Maze | B3/S12345 | 55.3% | 0.0% | Grows corridors, then freezes |\n| Life without Death | B3/S012345678 | 65.8% | 0.0% | Nothing ever dies, so it fills in |\n| Coral | B3/S45678 | 83.3% | 0.8% | Slowly grows into a solid reef |\n\nTwo of them surprised me.\n\n**Day & Night** (B3678/S34678) is symmetric: swap every live cell for a dead one and the rule behaves exactly the same. So it doesn't care what's alive, only which side is the majority. From a 35% soup it shrank to 4%. From a 50% soup it held at 49%, in big blobs.\n\n**Replicator** (B1357/S1357) makes every pattern copy itself. A cell is alive next generation if an odd number of its neighbours are alive, whatever it was before. On my 128-wide grid the whole world went blank, every time. That turns out to be exact: on a wrap-around grid this rule wipes out any starting pattern in half the grid's width, so 64 generations on a 128-wide grid and 32 on a 64-wide one. On a 127-wide grid it boils at 50% forever. The shape of the board decided the outcome.\n\n## Other ways to bend it\n\nThe numbers aren't the only thing you can change:\n\n- **Which cells count as neighbours.** Four instead of eight, a hexagonal grid with six, or every cell within a bigger radius (\"Larger than Life\").\n- **More than two states.** In \"Generations\" rules like Brian's Brain (B2/S/3), a dying cell lingers for a generation before it goes, which turns everything into waves and spaceships.\n- **Which neighbours, not just how many.** Rules that care about the arrangement of the neighbours, not only their count, give a much bigger family to explore.\n- **Chance.** Births and deaths happen with some probability, so you can watch structures slowly erode.\n- **Timing.** Update one cell at a time instead of all at once. A lot of Life's clockwork, gliders included, falls apart.\n- **The board.** A wrap-around grid, a Klein bottle, hard walls. Replicator shows this can decide the result.\n- **Several species.** Coloured cells that compete or mix (Immigration, QuadLife).\n- **Continuous versions.** SmoothLife and Lenia, where cells aren't just on or off, grow creatures that look alive.\n\n## Caveats\n\n- Four soups, one grid size and one starting density. Some rules behave differently from denser or sparser soups, as Day & Night shows.\n- \"Alive\" and \"changing\" are blunt. They can't tell a glider from noise, or a long-lived chaotic region from one that's about to die.\n- I left out rules with B0, where empty cells come alive with no neighbours at all. Empty space flashes on and off every generation, and they need their own treatment.\n\n## What I'd try next\n\n- Search all 262,144 rules automatically for ones that behave like Conway's (sparse, but never still) and see how rare that is.\n- Try the same one-number changes on a hexagonal grid, where every cell has six neighbours.\n- Update cells one at a time and see which of Conway's famous patterns survive.\n",
+   "body": "Conway's Game of Life runs on four laws:\n\n- **Underpopulation:** a live cell with fewer than two live neighbours dies.\n- **Survival:** a live cell with two or three live neighbours stays alive.\n- **Overpopulation:** a live cell with more than three live neighbours dies.\n- **Birth:** a dead cell with exactly three live neighbours comes alive.\n\nThere are only three numbers in there: two, three, and three again. I've been building on top of these rules for a while without ever asking why those numbers. So this time I changed them, one at a time, to see what Conway's choice is actually doing.\n\n## A shorter way to write the rules\n\nThe four laws only say two things: which neighbour counts keep a live cell alive, and which counts bring a dead cell to life. Everything else is death, or staying dead. That gives a compact notation, B for birth and S for survival:\n\n```math\nConway's rule:   B3/S23      born with 3,  survives with 2 or 3\n```\n\nWriting it this way makes it obvious how many other rules there are. Each of the nine possible neighbour counts (0 to 8) is either in the birth list or not, and either in the survival list or not:\n\n```math\nnumber of rules = 2^{9} \u00d7 2^{9} = 2^{18} = 262,144\n```\n\nThese are called \"Life-like\" rules. Conway's is one of them.\n\n## Try it\n\nThe figure runs the Game of Life on a random soup. The sliders are the numbers in the four laws. Move one and the same soup restarts under the new rule, so you're always comparing like with like. \"Conway's numbers\" puts everything back.\n\nThe background of this page is running the game too. The **Background rule** bar in the corner switches its laws while it runs, without restarting, so you can watch a world that grew up under Conway's rule boil, freeze or starve the moment the rule bends. Its cells take the colour of what the new rule does: green lives, red boils, blue freezes, grey starves.\n\n```viz life-laws\n```\n\n## Moving each number by one\n\nI ran each variant on the same four random soups: 128 \u00d7 128 cells on a wrap-around grid, 35% alive at the start, 600 generations. \"Alive\" is the share of cells alive over the last 100 generations. \"Changing\" is the share that flip each generation, a rough measure of how much is going on.\n\n| Law changed | As B/S | Alive | Changing | What happens |\n|---|---|---|---|---|\n| Conway, as written | B3/S23 | 5.0% | 2.7% | Busy for a long time, then gliders, blinkers and still \"ash\" |\n| Dies of loneliness below **1** (not 2) | B3/S123 | 33.1% | 27.3% | Boils |\n| Dies of loneliness below **3** | B3/S3 | 0.1% | 0.2% | Starves |\n| Never dies of loneliness | B3/S0123 | 37.0% | 24.3% | Boils |\n| Dies of crowding above **2** (not 3) | B3/S2 | 0.4% | 0.4% | Starves, down to sparse blinking ash |\n| Dies of crowding above **4** | B3/S234 | 50.6% | 0.2% | Fills half the world, then freezes |\n| Dies of crowding above **5** | B3/S2345 | 55.9% | 0.0% | Freezes harder |\n| Never dies of crowding | B3/S2345678 | 66.8% | 0.0% | Fills up and stops |\n| Born with exactly **2** (not 3) | B2/S23 | 35.0% | 28.6% | Boils |\n| Born with exactly **4** | B4/S23 | 3.9% | 0.0% | Freezes on the spot: almost nothing is ever born |\n| Born with 3 **or 4** | B34/S23 | 35.6% | 44.0% | Boils |\n| Born with **2 or** 3 | B23/S23 | 38.4% | 48.8% | Boils hardest |\n\nThe same results as a picture. Each dot is one rule, placed by how much of the world is alive and how much of it changes each generation:\n\n```viz life-variants\n```\n\n## What it shows\n\n**Conway's numbers sit on a knife edge.** Every change of one, in either direction, breaks the game, and it breaks in three ways:\n\n- **Loosen the rules for life and it boils.** Let a lonely cell survive with one neighbour, or let a cell be born from two neighbours instead of three, and the world fills with static: a third of it alive and a quarter or more flipping every generation, forever. Nothing holds still long enough to become a structure.\n- **Let crowded cells live and it freezes.** Raise the crowding limit to four and half the world fills in solid, then almost stops changing. More cells survive, but a cell surrounded on all sides has nowhere to go.\n- **Tighten any rule and it starves.** Make cells need three neighbours to survive, or die at more than two, or need four to be born, and almost everything dies within a few hundred generations.\n\nConway's rule is the narrow band in between: sparse (about 5% alive), but never quite still. That's where gliders, oscillators and long, unpredictable stretches of activity live. On the chart, Conway sits just off the bottom-left corner, close to the rules that starve or freeze, and nowhere near the ones that boil. It's barely alive, but it never stops moving.\n\n## Why those numbers?\n\nThis wasn't luck. Martin Gardner's 1970 column, which introduced the game, describes Conway choosing the rules after a long period of experimenting by hand, and lists what he was after. Roughly: no pattern should obviously grow forever, some patterns should look as if they might, and simple starting patterns should keep changing for a long time before they settle. My table is a crude test of exactly that. The boiling rules grow without limit, and the starving and freezing ones settle almost immediately.\n\nMy intuition for why it works:\n\n- **Birth at exactly three is choosy.** A new cell needs a fairly specific arrangement around it. At two, almost any pair of neighbouring cells breeds and growth runs away. At four, it rarely happens in sparse regions, so nothing new gets started.\n- **Survival at two or three means company but not a crowd.** Cells in a thin line or a small cluster survive, and both isolated cells and packed blobs die. That keeps structures small and lets them move: a glider is a shape that keeps rebuilding itself one square over.\n- **The two balance.** Births and deaths roughly cancel out over a sparse world, so activity neither takes over nor fades.\n\n## Further afield\n\nPeople have explored many of the other 262,144 rules, and some have names. The same soups, the same measurements:\n\n| Rule | B/S | Alive | Changing | Character |\n|---|---|---|---|---|\n| HighLife | B36/S23 | 4.8% | 3.0% | Almost identical to Conway's, plus a pattern that copies itself |\n| Seeds | B2/S | 21.1% | 42.2% | Every live cell dies each generation, yet it never stops |\n| Long Life | B345/S5 | 33.6% | 67.0% | Boils hardest of all |\n| 2x2 | B36/S125 | 14.3% | 13.2% | Activity built out of 2 \u00d7 2 tiles |\n| Maze | B3/S12345 | 55.3% | 0.0% | Grows corridors, then freezes |\n| Life without Death | B3/S012345678 | 65.8% | 0.0% | Nothing ever dies, so it fills in |\n| Coral | B3/S45678 | 83.3% | 0.8% | Slowly grows into a solid reef |\n\nTwo of them surprised me.\n\n**Day & Night** (B3678/S34678) is symmetric: swap every live cell for a dead one and the rule behaves exactly the same. So it doesn't care what's alive, only which side is the majority. From a 35% soup it shrank to 4%. From a 50% soup it held at 49%, in big blobs.\n\n**Replicator** (B1357/S1357) makes every pattern copy itself. A cell is alive next generation if an odd number of its neighbours are alive, whatever it was before. On my 128-wide grid the whole world went blank, every time. That turns out to be exact: on a wrap-around grid this rule wipes out any starting pattern in half the grid's width, so 64 generations on a 128-wide grid and 32 on a 64-wide one. On a 127-wide grid it boils at 50% forever. The shape of the board decided the outcome.\n\n## Other ways to bend it\n\nThe numbers aren't the only thing you can change:\n\n- **Which cells count as neighbours.** Four instead of eight, a hexagonal grid with six, or every cell within a bigger radius (\"Larger than Life\").\n- **More than two states.** In \"Generations\" rules like Brian's Brain (B2/S/3), a dying cell lingers for a generation before it goes, which turns everything into waves and spaceships.\n- **Which neighbours, not just how many.** Rules that care about the arrangement of the neighbours, not only their count, give a much bigger family to explore.\n- **Chance.** Births and deaths happen with some probability, so you can watch structures slowly erode.\n- **Timing.** Update one cell at a time instead of all at once. A lot of Life's clockwork, gliders included, falls apart.\n- **The board.** A wrap-around grid, a Klein bottle, hard walls. Replicator shows this can decide the result.\n- **Several species.** Coloured cells that compete or mix (Immigration, QuadLife).\n- **Continuous versions.** SmoothLife and Lenia, where cells aren't just on or off, grow creatures that look alive.\n\n## Caveats\n\n- Four soups, one grid size and one starting density. Some rules behave differently from denser or sparser soups, as Day & Night shows.\n- \"Alive\" and \"changing\" are blunt. They can't tell a glider from noise, or a long-lived chaotic region from one that's about to die.\n- I left out rules with B0, where empty cells come alive with no neighbours at all. Empty space flashes on and off every generation, and they need their own treatment.\n\n## What I'd try next\n\n- Search all 262,144 rules automatically for ones that behave like Conway's (sparse, but never still) and see how rare that is.\n- Try the same one-number changes on a hexagonal grid, where every cell has six neighbours.\n- Update cells one at a time and see which of Conway's famous patterns survive.\n",
+   "backdrop": {
+    "effect": "rules",
+    "variant": "conway"
+   },
+   "updated": 1791042392499
+  },
+  {
+   "id": "hexagonal-life",
+   "title": "Life on hexagons",
+   "date": "2026-10-03",
+   "tags": [
+    "game of life",
+    "cellular automata",
+    "hexagons"
+   ],
+   "summary": "On a hexagonal grid every cell has six neighbours. Conway's rule freezes, only two rules shaped like it survive, and in all 16,384 rules I couldn't find a single glider.",
+   "body": "In [Bending Conway's laws](#/e/bending-conways-laws) I changed the numbers in Conway's rules. This time I changed the board.\n\nOn the usual square grid every cell has eight neighbours: four that share an edge and four that only touch at a corner. That's a bit lopsided. A diagonal neighbour is about 1.4 times further away than an edge neighbour, but it counts the same. On a hexagonal grid every cell has six neighbours, and every one of them shares an edge. It looks like the fairer board, so I wanted to see what happens to Life on it.\n\n## Hexagons on a computer\n\nScreens are made of squares, so the usual trick is offset rows: every other row is shifted half a cell to the right. Each cell then touches two cells in its own row, two above it and two below. The world wraps around at the edges like the square one, which needs an even number of rows so that the shifted rows still line up when they meet.\n\nWith six neighbours instead of eight, there are fewer rules. Each of the seven possible neighbour counts (0 to 6) is either in the birth list or not, and either in the survival list or not:\n\n```math\nhex rules = 2^{7} \u00d7 2^{7} = 16,384      square rules = 2^{9} \u00d7 2^{9} = 262,144\n```\n\nThat's few enough to try every single one, which is what most of this entry is about.\n\n## Try it\n\nThe Game of Life on real hexagons. The menu has some rules worth seeing, and the sliders are Conway's four laws again, now counting up to six neighbours.\n\n```viz hex-life\n```\n\n## Conway's rule on hexagons\n\nConway's numbers, B3/S23, don't work here. From a random soup the world freezes solid within about 40 generations, with 4.5% of cells alive and nothing moving at all. Changing any one number doesn't rescue it. I ran every one-number change on the same two soups (60 \u00d7 60 cells, 35% alive at the start, 400 generations):\n\n| Change | Rule | Alive | Changing | What happens |\n|---|---|---|---|---|\n| Conway's numbers | B3/S23 | 4.5% | 0.1% | Freezes |\n| born with 1 as well | B13/S23 | 47.8% | 41.5% | Boils |\n| born with 2 as well | B23/S23 | 47.6% | 48.2% | Boils |\n| never born | B/S23 | 5.5% | 0.1% | Freezes |\n| born with 4 as well | B34/S23 | 4.6% | 0.1% | Settles into blinking ash |\n| born with 5 as well | B35/S23 | 3.4% | 0.1% | Settles into blinking ash |\n| born with 6 as well | B36/S23 | 3.3% | 0.1% | Settles into blinking ash |\n| survives alone | B3/S023 | 5.8% | 0.1% | Settles into blinking ash |\n| survives with 1 | B3/S123 | 40.1% | 21.3% | Boils |\n| doesn't survive with 2 | B3/S3 | 0.1% | 0.1% | Starves |\n| doesn't survive with 3 | B3/S2 | 0.7% | 0.1% | Starves |\n| survives with 4 | B3/S234 | 61.9% | 0.2% | Fills in and settles |\n| survives with 5 | B3/S235 | 4.9% | 0.1% | Settles into blinking ash |\n| survives with 6 | B3/S236 | 4.7% | 0.1% | Settles into blinking ash |\n\nOn the square grid, Conway's rule sat on a knife edge between boiling and freezing. On hexagons there's no edge to sit on. Every change either boils or collapses into still or blinking ash within a few hundred generations, and Conway's rule itself is already frozen.\n\n## All 16,384 rules\n\nSo I tried all of them. A script runs every hex rule on the same two random soups and sorts it by how it ends:\n\n- **Lives:** keeps going in at least one soup, and isn't boiling. This is the Conway-like class.\n- **Boils:** keeps going, and more than 15% of cells flip every generation.\n- **Fills up:** keeps going, more than 60% alive.\n- **Settles into blinking ash:** every soup falls into a repeating cycle.\n- **Freezes:** every soup stops changing completely.\n- **Dies out:** every soup ends empty.\n\nHalf of all rules include B0, where an empty cell with no neighbours comes alive, so empty space flashes on and off every generation. I've left those out of the counts below and the chart, which leaves 8,192 rules:\n\n| How it ends | Rules | Share |\n|---|---|---|\n| Lives | 161 | 2.0% |\n| Boils | 4,769 | 58.2% |\n| Fills up | 106 | 1.3% |\n| Settles into blinking ash | 1,802 | 22.0% |\n| Freezes | 1,189 | 14.5% |\n| Dies out | 165 | 2.0% |\n\nHere is every one of them. Each dot is one rule, placed by how much of the world is alive and how much of it changes each generation. Click a dot to run that rule in the simulator above.\n\n```viz hex-map\n```\n\nMost rules boil (the red cloud on the right) or settle (the blue and teal column along the left edge: once a world settles, nothing changes, however much of it is alive). The 161 that live, the yellow dots, sit just to the right of that column: not much changes each generation, but it never drops to nothing. Most of them don't look much like Conway's rule at all.\n\n**Only two rules shaped like Conway's live.** Conway's rule has a simple shape: survive with any count in a range, be born with exactly one count. There are 168 hex rules of that shape, and just two of them live. The closer one is **B3/S3456**: a cell is born with exactly three neighbours, as in Conway's game, but it survives with anything from three to six. Cells need more company to stay alive, and they never die of crowding. It's denser than Conway's game (about 16% alive) and quieter (about 2% changing), but it doesn't settle. The other, **B4/S01234**, is born with four and survives with anything up to four, so cells never die of loneliness. It fills about 40% of the world and barely moves (about 1% changing).\n\n**The sparsest living rules are strange.** The rules that live closest to Conway's sparseness are B24/S3 (about 2% alive), which is born with two or four neighbours but survives only with exactly three, and B345/S124 (about 3%), which survives with one, two or four but not three. Neither looks much like Conway's rule.\n\n## No gliders\n\nThe most surprising result was this one: **I couldn't find a single glider on hexagons.**\n\nA glider (more generally, a spaceship) is a pattern that rebuilds itself one step over, so it travels. In Conway's game they fall out of almost any messy start. To look for them, the script drops small random patterns into an empty world, runs them, and watches for a shape that reappears moved somewhere else.\n\n- **Every hex rule without B0:** 60 random 5 \u00d7 5 starts each. No spaceships, in any of the 8,192 rules.\n- **25 promising rules,** including the living rules named above and the rules nearest Conway's: 3,000 random starts each, from 3 \u00d7 3 to 7 \u00d7 7, allowing bigger patterns and longer runs. Still nothing.\n- **The same deep search on Conway's square rule** found 16 different moving shapes, including the classic five-cell glider, in about 20 seconds.\n\nFor comparison, the full square-grid survey found 2,805 living rules among the 131,072 without B0 (2.1%), and 16 of them produced a spaceship from the same small random starts, most of them close relatives of Conway's rule. On hexagons: none.\n\nThat doesn't prove that hex spaceships don't exist. Some might need a large, specific starting pattern that random starts almost never make. But it's a real difference between the two boards: on squares, motion is everywhere. On hexagons, with these rules, I didn't see any.\n\n## Why hexagons might be harder\n\nThese are guesses, not results:\n\n- **Fewer neighbours means coarser rules.** With eight neighbours, \"born with 3\" means three out of eight. With six, the closest choices are two out of six (a third) or three out of six (a half). Neither matches Conway's balance: two boils and three freezes, as the table shows.\n- **Diagonals might be what makes gliders work.** Conway's glider moves diagonally, and it relies on the corner neighbours that the hex grid doesn't have.\n\n## Caveats\n\n- Two soups per rule, one grid size (60 \u00d7 60) and one starting density (35%). Some rules behave differently from denser or sparser soups.\n- \"Lives\" means it hadn't settled after 400 generations. A slow rule might settle later; a fast one might just be noise.\n- The glider search only tries small random starts, so it can miss spaceships that need something bigger. Even Conway's own glider didn't turn up in the quick search's 60 starts on the square grid; it took about 200. That's why the 25 most promising hex rules got 3,000 each.\n\n## What I'd try next\n\n- A smarter spaceship search that builds candidate patterns instead of guessing them.\n- Hexagonal rules that care about which neighbours are alive, not just how many. That's a much bigger family, and it's where I'd look for hex gliders next.\n- A triangular grid, where each cell has three edge neighbours, or twelve if you count corners.\n",
    "backdrop": {
     "effect": "life",
     "formation": "cycle"
    },
-   "updated": 1791042392499
+   "updated": 1791066574402
   }
  ]
 }</script>
@@ -652,7 +690,7 @@ function showEditor(id) {
     '<div class="field"><div style="display:flex;justify-content:space-between;align-items:end;gap:1rem"><label for="f-body">Body</label>' +
     '<div class="tabs" role="tablist"><button type="button" class="tab" role="tab" aria-selected="true" id="t-write">Write</button><button type="button" class="tab" role="tab" aria-selected="false" id="t-prev">Preview</button></div></div>' +
     '<textarea id="f-body" spellcheck="true">' + esc(e.body) + '</textarea><div class="preview prose" id="pv" hidden></div>' +
-    '<span class="hint">Markdown: # headings, **bold**, *italic*, `code`, ``` code blocks, lists, &gt; quotes, [links](https://…), tables. Images must be https links or data URLs. Live figures: ```viz motion-distortion```, ```viz ransac```, ```viz lidar-life```, ```viz rover-hunt```, ```viz rover-farm```, ```viz life-laws```, ```viz life-variants```. Equations: a ```math block, one equation per line, with x_{sub} and x^{sup}.</span></div>' +
+    '<span class="hint">Markdown: # headings, **bold**, *italic*, `code`, ``` code blocks, lists, &gt; quotes, [links](https://…), tables. Images must be https links or data URLs. Live figures: ```viz motion-distortion```, ```viz ransac```, ```viz lidar-life```, ```viz rover-hunt```, ```viz rover-farm```, ```viz life-laws```, ```viz life-variants```, ```viz hex-life```, ```viz hex-map```. Equations: a ```math block, one equation per line, with x_{sub} and x^{sup}.</span></div>' +
     '<p class="error-text" id="err" hidden></p>' +
     '<div class="form-actions"><button class="btn primary" type="submit" id="pub">' + (base ? 'Publish changes' : 'Publish entry') + '</button>' +
     '<a class="btn" href="' + (base ? '#/e/' + esc(base.id) : '#/') + '">Cancel</a><span class="note">Publishing updates the live site for everyone with the link.</span></div>' +
@@ -739,6 +777,14 @@ var Backdrop = (function () {
     isPaused: function () { return paused; }
   };
   function normal(spec) { spec = spec && effects[spec.effect] ? spec : (SITE.backdrop && effects[SITE.backdrop.effect] ? SITE.backdrop : DEFAULT_BACKDROP); return spec; }
+  var sizeTimer = 0;
+  function waitForSize() {   // the window had no size when the effect started: rebuild it once it does
+    clearInterval(sizeTimer); var tries = 0;
+    sizeTimer = setInterval(function () {
+      if (window.innerWidth && window.innerHeight) { clearInterval(sizeTimer); if (active && active.resize) active.resize(); }
+      else if (++tries > 600) clearInterval(sizeTimer);
+    }, 200);
+  }
   return {
     register: function (name, def) { effects[name] = def; },
     effects: function () { return effects; },
@@ -749,6 +795,7 @@ var Backdrop = (function () {
       if (active) active.destroy();
       activeName = spec.effect; active = effects[spec.effect].create(host, spec);
       if (active.setPaused) active.setPaused(paused);
+      if (!window.innerWidth || !window.innerHeight) waitForSize();
     },
     setPaused: function (p) { paused = p; try { localStorage.setItem('nb-bg-play', p ? 'paused' : 'playing'); } catch (e) {} if (active && active.setPaused) active.setPaused(p); },
     isPaused: function () { return paused; },
@@ -765,7 +812,7 @@ var Backdrop = (function () {
 /* Clicks on empty parts of the page (not text, links, forms or panels) go to the effect. */
 document.addEventListener('pointerdown', function (ev) {
   if (ev.button !== 0) return;
-  if (ev.target.closest('a,button,input,textarea,select,label,summary,.article,.entries,.colophon,.name,.tagline,.now')) return;
+  if (ev.target.closest('a,button,input,textarea,select,label,summary,.article,.entries,.colophon,.name,.tagline,.now,.rulebar')) return;
   Backdrop.pointer(ev.clientX, ev.clientY);
 });
 var resizeT;
@@ -1736,6 +1783,108 @@ Backdrop.register('rover', {
   }
 });
 
+/* ---------- Bent rules: the Game of Life with buttons that change its laws while it runs ---------- */
+var BENT_RULES = [
+  { id: 'conway', label: 'Conway', rule: 'B3/S23', kind: 'lives', text: 'Conway’s rule: born with 3, survives with 2 or 3.' },
+  { id: 'highlife', label: 'HighLife', rule: 'B36/S23', kind: 'lives', text: 'Also born with 6. Almost identical to Conway’s, plus a pattern that copies itself.' },
+  { id: 'b2', label: 'Born with 2', rule: 'B2/S23', kind: 'boils', text: 'Born with 2 instead of 3. Almost any pair of cells breeds, and the world boils.' },
+  { id: 'lonely', label: 'Lonely cells live', rule: 'B3/S123', kind: 'boils', text: 'Survives with just 1 neighbour. Nothing dies off, and it boils.' },
+  { id: 'b34', label: 'Born with 3 or 4', rule: 'B34/S23', kind: 'boils', text: 'Born with 3 or 4. Births run away and it boils.' },
+  { id: 'crowd', label: 'Crowded cells live', rule: 'B3/S234', kind: 'freezes', text: 'Survives with up to 4 neighbours. It fills in and freezes into a maze.' },
+  { id: 'b4', label: 'Born with 4', rule: 'B4/S23', kind: 'freezes', text: 'Born with exactly 4. Almost nothing new is born, so it freezes where it stands.' },
+  { id: 'crowd2', label: 'Dies above 2', rule: 'B3/S2', kind: 'starves', text: 'Dies with more than 2 neighbours. It starves down to blinking ash.' },
+  { id: 'needs3', label: 'Needs 3 to survive', rule: 'B3/S3', kind: 'starves', text: 'Survives only with exactly 3 neighbours. Almost everything starves.' }
+];
+var BENT_COLORS = { lives: [111, 181, 125], boils: [224, 104, 95], freezes: [116, 163, 227], starves: [177, 175, 164] };
+function bentMasks(rule) { var m = /^B(\d*)\/S(\d*)$/.exec(rule), born = 0, surv = 0; m[1].split('').forEach(function (d) { born |= 1 << +d; }); m[2].split('').forEach(function (d) { surv |= 1 << +d; }); return { born: born, surv: surv }; }
+Backdrop.register('rules', {
+  label: 'Bent rules (Game of Life with switchable laws)',
+  options: function () { return BENT_RULES.map(function (r) { return { value: r.id, label: 'Start with: ' + r.label + ' (' + r.rule + ')' }; }); },
+  create: function (host, spec) {
+    var canvas = host.canvas, ctx = host.ctx, raf = 0, paused = host.isPaused(), acc = 0, last = 0, statT = 0;
+    var W, H, s, a, b, trail, off, offCtx, img, px, luts = {}, cur, masks, gen = 0, stats = { alive: 0, changed: 0 }, seed = 1;
+    var LE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+    Object.keys(BENT_COLORS).forEach(function (k) { var C = BENT_COLORS[k], L = new Uint32Array(32), B = [38, 38, 36];
+      for (var l = 0; l < 32; l++) { var al = l === 31 ? 0.8 : Math.pow(l / 31, 2) * 0.22;
+        var r = Math.round(B[0] + (C[0] - B[0]) * al), g = Math.round(B[1] + (C[1] - B[1]) * al), bb = Math.round(B[2] + (C[2] - B[2]) * al);
+        L[l] = LE ? (255 << 24 | bb << 16 | g << 8 | r) >>> 0 : (r << 24 | g << 16 | bb << 8 | 255) >>> 0; }
+      luts[k] = L; });
+    cur = BENT_RULES.filter(function (r) { return r.id === spec.variant; })[0] || BENT_RULES[0]; masks = bentMasks(cur.rule);
+
+    // the floating bar of rule buttons (the background's own controls; the page has no other place for them)
+    var bar = document.createElement('div'); bar.className = 'rulebar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Background rule');
+    bar.innerHTML = '<div class="rulebar-head"><button type="button" class="rulebar-toggle" aria-expanded="true"><span>Background rule:</span> <b data-r></b></button><span class="rulebar-stats" data-s aria-live="off"></span></div>' +
+      '<div class="rulebar-body"><p class="rulebar-text" data-t></p><div class="rulebar-btns">' +
+      BENT_RULES.map(function (r) { var C = BENT_COLORS[r.kind]; return '<button type="button" class="rulebar-btn" data-rule="' + r.id + '" aria-pressed="false" title="' + esc(r.rule) + '"><i style="background:rgb(' + C.join(',') + ')"></i>' + esc(r.label) + '</button>'; }).join('') +
+      '</div><p class="rulebar-foot"><button type="button" class="linkish" data-x="conway">Back to Conway</button><button type="button" class="linkish" data-x="soup">Fresh soup</button><span>Click the empty background to sprinkle in cells.</span></p></div>';
+    document.body.appendChild(bar);
+    var toggleBtn = bar.querySelector('.rulebar-toggle');
+    function setOpen(open) { bar.classList.toggle('closed', !open); toggleBtn.setAttribute('aria-expanded', String(open)); }
+    setOpen(window.innerWidth >= 1200);   // narrower screens start with it folded, so it doesn't sit on the article
+    toggleBtn.addEventListener('click', function () { setOpen(bar.classList.contains('closed')); });
+    bar.addEventListener('click', function (ev) {
+      var rb = ev.target.closest('[data-rule]'), x = ev.target.closest('[data-x]');
+      if (rb) choose(rb.getAttribute('data-rule'));
+      else if (x && x.getAttribute('data-x') === 'conway') choose('conway');
+      else if (x) { seed++; soup(); }
+    });
+
+    function setup() {
+      var w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight); s = Math.max(4, Math.round(Math.min(w, h) / 150));
+      W = Math.ceil(w / s); H = Math.ceil(h / s);
+      canvas.width = W * s; canvas.height = H * s; canvas.style.width = W * s + 'px'; canvas.style.height = H * s + 'px';
+      off = document.createElement('canvas'); off.width = W; off.height = H; offCtx = off.getContext('2d'); img = offCtx.createImageData(W, H); px = new Uint32Array(img.data.buffer);
+      soup(); host.reveal();
+    }
+    function soup() {
+      var rnd = mulberry32(seed * 7919 + 3); a = new Uint8Array(W * H); b = new Uint8Array(W * H); trail = new Uint8Array(W * H);
+      for (var i = 0; i < W * H; i++) a[i] = rnd() < 0.3 ? 1 : 0;
+      gen = 0; draw(); status(); caption();
+    }
+    // switching keeps the world as it is: the new law takes over from the very next generation
+    function choose(id) {
+      var r = BENT_RULES.filter(function (x) { return x.id === id; })[0]; if (!r || r === cur) return;
+      cur = r; masks = bentMasks(r.rule); status(); caption();
+    }
+    function status() {
+      bar.querySelector('[data-r]').textContent = cur.label + ' (' + cur.rule + ')';
+      bar.querySelector('[data-t]').textContent = cur.text;
+      bar.querySelectorAll('[data-rule]').forEach(function (el) { el.setAttribute('aria-pressed', String(el.getAttribute('data-rule') === cur.id)); });
+      var n = W * H, al = gen ? stats.alive : a.reduce(function (t, v) { return t + v; }, 0);
+      bar.querySelector('[data-s]').textContent = (100 * al / n).toFixed(1) + '% alive' + (gen ? ' · ' + (100 * stats.changed / n).toFixed(1) + '% changing' : '');
+    }
+    function caption() {
+      host.caption({ title: 'Bent rules: ' + cur.label + ' (' + cur.rule + ')', credit: 'switch the rule with the buttons; click the background to add cells',
+        text: 'The Game of Life on a random soup, with the rule bar to change its laws while it runs. ' + cur.text + ' Colours show what the current rule does to a world: green lives, red boils, blue freezes, grey starves.',
+        legend: [{ color: '#6fb57d', label: 'Lives' }, { color: '#e0685f', label: 'Boils' }, { color: '#74a3e3', label: 'Freezes' }, { color: '#b1afa4', label: 'Starves' }],
+        actions: [{ id: 'soup', label: 'Fresh soup' }] });
+    }
+    function draw() {
+      var lut = luts[cur.kind];
+      for (var i = 0; i < W * H; i++) { if (a[i]) trail[i] = 31; else if (trail[i]) trail[i]--; px[i] = lut[trail[i]]; }
+      offCtx.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(off, 0, 0, W * s, H * s);
+    }
+    function frame(t) {
+      raf = requestAnimationFrame(frame);
+      var dt = Math.min(0.1, (t - last) / 1000 || 0); last = t;
+      if (!paused) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n;
+        for (var i = 0; i < n; i++) { stats = lifeLikeStep(a, b, W, H, masks.born, masks.surv); var tt = a; a = b; b = tt; gen++; } }
+      draw();
+      if (t - statT > 400) { statT = t; status(); }
+    }
+    setup(); raf = requestAnimationFrame(frame);
+    return {
+      update: function (sp) { var r = BENT_RULES.filter(function (x) { return x.id === sp.variant; })[0]; if (r) choose(r.id); },
+      pointer: function (x, y) { var cx = Math.floor(x / s), cy = Math.floor(y / s), rnd = mulberry32((Date.now() & 0xffff) + cx);
+        for (var j = -3; j <= 3; j++) for (var i = -3; i <= 3; i++) if (rnd() < 0.45) a[((cy + j + H) % H) * W + (cx + i + W) % W] = 1; return true; },
+      setPaused: function (p) { paused = p; last = performance.now(); },
+      action: function (id) { if (id === 'soup') { seed++; soup(); } },
+      resize: function () { setup(); },
+      destroy: function () { cancelAnimationFrame(raf); bar.remove(); host.hide(); }
+    };
+  }
+});
+
 /* ---------- small charts for benchmark results (canvas, site colours, hover readout) ---------- */
 var STRAT_COLORS = { planner: '#e6b85c', farmer: '#e6b85c', overcrowder: '#74a3e3', ambusher: '#74a3e3', greedy: '#e0685f', random: '#b1afa4', parked: '#c58fd6' };
 function aggregate(traces, key) { // mean / min / max across seeds at each sample
@@ -2225,6 +2374,170 @@ VIZ['life-variants'] = { mount: function (fig) {
     })();
   };
   var ro = new ResizeObserver(draw); ro.observe(holder); draw();
+  return function () { cancelled = true; ro.disconnect(); };
+} };
+
+/* 8. Life on hexagons. Cells sit in "odd-r" offset rows: odd rows are shifted half a cell right, so every cell has
+   exactly six neighbours, all sharing an edge with it. The grid wraps at the edges, so it needs an even number of rows. */
+function hexNeighbours(W, H) {
+  var T = new Int32Array(W * H * 6);
+  for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+    var offs = y & 1 ? [[1, 0], [-1, 0], [0, -1], [1, -1], [0, 1], [1, 1]] : [[1, 0], [-1, 0], [-1, -1], [0, -1], [-1, 1], [0, 1]];
+    for (var j = 0; j < 6; j++) T[(y * W + x) * 6 + j] = ((y + offs[j][1] + H) % H) * W + (x + offs[j][0] + W) % W;
+  }
+  return T;
+}
+function hexStep(a, b, T, born, surv) {
+  var alive = 0, changed = 0;
+  for (var i = 0, n = a.length; i < n; i++) {
+    var k = i * 6, c = a[T[k]] + a[T[k + 1]] + a[T[k + 2]] + a[T[k + 3]] + a[T[k + 4]] + a[T[k + 5]];
+    var v = ((a[i] ? surv : born) >> c) & 1; b[i] = v; alive += v; changed += v !== a[i];
+  }
+  return { alive: alive, changed: changed };
+}
+function hexMasks(rule) { var m = /^B([0-6]*)\/S([0-6]*)$/.exec(rule), born = 0, surv = 0; m[1].split('').forEach(function (d) { born |= 1 << +d; }); m[2].split('').forEach(function (d) { surv |= 1 << +d; }); return { born: born, surv: surv }; }
+function hexName(m) { var b = '', s = ''; for (var n = 0; n <= 6; n++) { if (m.born >> n & 1) b += n; if (m.surv >> n & 1) s += n; } return 'B' + b + '/S' + s; }
+var HEX_PRESETS = [
+  { rule: 'B3/S23', label: 'Conway’s numbers (B3/S23): freezes' },
+  { rule: 'B3/S3456', label: 'B3/S3456: one of two Conway-shaped rules that live' },
+  { rule: 'B4/S01234', label: 'B4/S01234: the other one, dense and quiet' },
+  { rule: 'B24/S3', label: 'B24/S3: the sparsest rule that lives' },
+  { rule: 'B3456/S124', label: 'B3456/S124: sparse and quiet, but alive' },
+  { rule: 'B2/S34', label: 'B2/S34: settles into blinking ash' },
+  { rule: 'B23/S23', label: 'B23/S23: boils' },
+  { rule: 'B3/S234', label: 'B3/S234: fills and freezes' }
+];
+VIZ['hex-life'] = { mount: function (fig, visible) {
+  var wrap = document.createElement('div'); wrap.className = 'viz-stage'; var c = document.createElement('canvas'); wrap.appendChild(c); fig.appendChild(wrap);
+  var ctrl = vizControls(fig);
+  function slider(key, label, min, max, val) { return '<label>' + label + ' <input type="range" min="' + min + '" max="' + max + '" step="1" value="' + val + '" data-k="' + key + '"> <output data-o="' + key + '">' + val + '</output></label>'; }
+  ctrl.innerHTML = '<label>Rule <select data-p>' + HEX_PRESETS.map(function (p, i) { return '<option value="' + i + '">' + esc(p.label) + '</option>'; }).join('') + '<option value="custom">The sliders below</option></select></label>' +
+    slider('lonely', 'Dies of loneliness below', 0, 6, 2) + slider('crowd', 'Dies of crowding above', 0, 6, 3) + slider('bmin', 'Born with at least', 1, 6, 3) + slider('bmax', 'Born with at most', 1, 6, 3) +
+    '<button type="button" class="btn" data-a="soup">New soup</button><button type="button" class="btn" data-a="run"></button><button type="button" class="btn" data-a="step">Step</button>';
+  var lawCap = vizCaption(fig, ''), cap = vizCaption(fig, '');
+  var q = function (sel) { return ctrl.querySelector(sel); }, ctx = c.getContext('2d'), W, H, R, T, a, b, trail, masks, seed = 1, gen = 0, stats = { alive: 0, changed: 0 }, running = !REDUCED, acc = 0, capT = 0, dpr = Math.min(2, window.devicePixelRatio || 1);
+  var SQ3 = Math.sqrt(3);
+  function val(k) { return +q('[data-k="' + k + '"]').value; }
+  function size() {
+    var w = wrap.clientWidth || 600; R = Math.max(3, w / 120 / SQ3 * 1.0);          // about 120 cells across
+    W = Math.floor(w / (SQ3 * R) - 0.5); H = Math.round(W * 0.62); if (H % 2) H++;
+    var cw = (W + 0.5) * SQ3 * R, ch = (H * 1.5 + 0.5) * R;
+    c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); c.style.width = cw + 'px'; c.style.height = ch + 'px';
+    T = hexNeighbours(W, H);
+  }
+  function reset() {
+    var rnd = mulberry32(seed * 104729 + 5); a = new Uint8Array(W * H); b = new Uint8Array(W * H); trail = new Uint8Array(W * H);
+    for (var i = 0; i < W * H; i++) a[i] = rnd() < 0.35 ? 1 : 0;
+    gen = 0; draw(); text();
+  }
+  function fromSliders() { var lo = val('lonely'), hi = val('crowd'), b0 = val('bmin'), b1 = val('bmax'), m = { born: 0, surv: 0 }, n;
+    for (n = b0; n <= b1; n++) m.born |= 1 << n; for (n = lo; n <= hi; n++) m.surv |= 1 << n; return m; }
+  function setRule(m, presetIndex, fromSliders) {
+    masks = m; q('[data-p]').value = presetIndex == null ? 'custom' : String(presetIndex);
+    if (!fromSliders) syncSliders(m);
+    describe(); reset();
+  }
+  // move the sliders to match a rule from the menu or the chart, when the sliders can express it (one range each)
+  function span(mask) { var lo = -1, hi = -1; for (var n = 0; n <= 6; n++) if (mask >> n & 1) { if (lo < 0) lo = n; hi = n; }
+    if (lo < 0) return null; for (n = lo; n <= hi; n++) if (!(mask >> n & 1)) return null; return [lo, hi]; }
+  function syncSliders(m) {
+    var b = span(m.born), sv = span(m.surv); ctrl.classList.toggle('viz-off-sliders', !(b && sv));
+    if (!b || !sv) return;
+    [['lonely', sv[0]], ['crowd', sv[1]], ['bmin', b[0]], ['bmax', b[1]]].forEach(function (p) { q('[data-k="' + p[0] + '"]').value = p[1]; q('[data-o="' + p[0] + '"]').textContent = p[1]; });
+  }
+  function describe() {
+    var nb = function (n) { return n === 1 ? 'neighbour' : 'neighbours'; }, list = function (mask) { var xs = []; for (var n = 0; n <= 6; n++) if (mask >> n & 1) xs.push(n); return xs; };
+    var join = function (xs) { return xs.length === 1 ? 'exactly ' + xs[0] : xs.slice(0, -1).join(', ') + ' or ' + xs[xs.length - 1]; };
+    var bs = list(masks.born), ss = list(masks.surv);
+    lawCap.innerHTML = '<strong>' + hexName(masks) + '</strong> on hexagons. ' +
+      (bs.length ? 'A dead cell with ' + join(bs) + ' live ' + nb(bs[bs.length - 1]) + ' comes alive. ' : 'No dead cell ever comes alive. ') +
+      (ss.length ? 'A live cell with ' + join(ss) + ' survives; any other count kills it.' : 'No live cell survives.');
+  }
+  function step() { stats = hexStep(a, b, T, masks.born, masks.surv); var t = a; a = b; b = t; gen++; }
+  function hexPath(cx, cy, r) { ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * SQ3 / 2, cy - r / 2); ctx.lineTo(cx + r * SQ3 / 2, cy + r / 2); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * SQ3 / 2, cy + r / 2); ctx.lineTo(cx - r * SQ3 / 2, cy - r / 2); ctx.closePath(); }
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#1f1f1d'; ctx.fillRect(0, 0, c.width, c.height);
+    var buckets = [[], [], [], []], i, x, y;
+    for (i = 0; i < W * H; i++) { if (a[i]) trail[i] = 31; else if (trail[i]) trail[i]--; if (trail[i]) buckets[trail[i] === 31 ? 3 : Math.min(2, trail[i] >> 3)].push(i); }
+    var fills = ['rgba(111,181,125,0.06)', 'rgba(111,181,125,0.12)', 'rgba(111,181,125,0.2)', '#6fb57d'], r = R * 0.94;
+    buckets.forEach(function (list, k) { if (!list.length) return; ctx.fillStyle = fills[k]; ctx.beginPath();
+      list.forEach(function (i) { y = (i / W) | 0; x = i % W; hexPath((x + 0.5 + (y & 1) * 0.5) * SQ3 * R, (y * 1.5 + 1) * R, r); }); ctx.fill(); });
+  }
+  function text() {
+    var n = W * H, al = gen ? stats.alive : a.reduce(function (t, v) { return t + v; }, 0);
+    cap.textContent = 'Generation ' + gen.toLocaleString() + '. ' + (100 * al / n).toFixed(1) + '% of cells alive' + (gen ? ', ' + (100 * stats.changed / n).toFixed(1) + '% changed in the last generation.' : '. The soup starts 35% alive.');
+    q('[data-a="run"]').textContent = running ? 'Pause' : 'Run';
+  }
+  q('[data-p]').addEventListener('change', function () { var v = this.value; if (v === 'custom') setRule(fromSliders(), null); else setRule(hexMasks(HEX_PRESETS[+v].rule), +v); });
+  ctrl.addEventListener('input', function (ev) {
+    var k = ev.target.getAttribute('data-k'); if (!k) return;
+    if (k === 'bmin' && val('bmin') > val('bmax')) q('[data-k="bmax"]').value = val('bmin');
+    if (k === 'bmax' && val('bmax') < val('bmin')) q('[data-k="bmin"]').value = val('bmax');
+    ['lonely', 'crowd', 'bmin', 'bmax'].forEach(function (key) { q('[data-o="' + key + '"]').textContent = val(key); });
+    ctrl.classList.remove('viz-off-sliders'); setRule(fromSliders(), null, true);
+  });
+  ctrl.addEventListener('click', function (ev) { var act = ev.target.getAttribute('data-a'); if (!act) return;
+    if (act === 'soup') { seed++; reset(); } else if (act === 'run') { running = !running; text(); } else if (act === 'step') { running = false; step(); draw(); text(); } });
+  // the chart of every hex rule sends a rule here when you click one of its dots
+  function onPick(ev) { var m = hexMasks(ev.detail), i = HEX_PRESETS.map(function (p) { return p.rule; }).indexOf(ev.detail); setRule(m, i >= 0 ? i : null); if (!running && !REDUCED) running = true; text(); fig.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'center' }); }
+  document.addEventListener('nb-hex-rule', onPick);
+  size(); masks = hexMasks(HEX_PRESETS[0].rule); describe(); reset();
+  var ro = new ResizeObserver(function () { var w = wrap.clientWidth; if (w && Math.abs(w - parseFloat(c.style.width)) > 12) { size(); reset(); } }); ro.observe(wrap);
+  var stop = loop(visible, function (dt, t) {
+    if (running) { acc += dt * 12; var n = Math.min(3, Math.floor(acc)); acc -= n; for (var i = 0; i < n; i++) step(); if (n) draw(); }
+    if (t - capT > 250) { capT = t; text(); }
+  });
+  return function () { stop(); ro.disconnect(); document.removeEventListener('nb-hex-rule', onPick); };
+} };
+
+/* 9. Every hex rule on one chart, from the survey in tools/rule-survey.js (data/rules-hex.json) */
+VIZ['hex-map'] = { mount: function (fig) {
+  var holder = document.createElement('div'); holder.className = 'viz-stage'; holder.style.padding = '0.75rem 0.5rem 0'; fig.appendChild(holder);
+  var cv = document.createElement('canvas'); holder.appendChild(cv); var ctx = cv.getContext('2d');
+  var read = vizCaption(fig, 'Loading the survey…'), data = null, hover = -1, geom = null, cancelled = false;
+  var CLASS_COLORS = { lives: '#e6b85c', boils: '#e0685f', dense: '#c58fd6', oscillates: '#9ad0c8', freezes: '#74a3e3', dies: '#85837a' };
+  var CLASS_WORDS = { lives: 'lives', boils: 'boils', dense: 'fills up and churns', oscillates: 'settles into blinking ash', freezes: 'freezes', dies: 'dies out' };
+  var CLASS_LABELS = { lives: 'Lives', boils: 'Boils', dense: 'Fills up', oscillates: 'Settles into blinking ash', freezes: 'Freezes', dies: 'Dies out' };
+  function draw() {
+    if (!data) return;
+    var dpr = Math.min(2, window.devicePixelRatio || 1), w = holder.clientWidth - 16 || 560, h = Math.round(Math.min(420, Math.max(260, w * 0.62)));
+    cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + 'px'; cv.style.height = h + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var L = 44, Rm = 14, T = 10, B = 38, pw = w - L - Rm, ph = h - T - B, xMax = 60, yMax = 100, font = getComputedStyle(document.body).getPropertyValue('--sans');
+    var X = function (v) { return L + pw * v / xMax; }, Y = function (v) { return T + ph * (1 - v / yMax); };
+    geom = { X: X, Y: Y };
+    ctx.clearRect(0, 0, w, h); ctx.font = '11px ' + font; ctx.lineWidth = 1;
+    for (var gx = 0; gx <= xMax; gx += 10) { var x = Math.round(X(gx)) + 0.5; ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke(); ctx.fillStyle = '#85837a'; ctx.textAlign = 'center'; ctx.fillText(gx + '%', x, T + ph + 15); }
+    for (var gy = 0; gy <= yMax; gy += 20) { var y = Math.round(Y(gy)) + 0.5; ctx.strokeStyle = 'rgba(177,175,164,0.14)'; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke(); ctx.fillStyle = '#85837a'; ctx.textAlign = 'right'; ctx.fillText(gy + '%', L - 6, y + 4); }
+    ctx.fillStyle = '#b1afa4'; ctx.textAlign = 'center'; ctx.fillText('Cells changing each generation', L + pw / 2, h - 4);
+    ctx.save(); ctx.translate(11, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('Cells alive', 0, 0); ctx.restore();
+    // the quiet classes first, so the few living rules sit on top
+    [5, 4, 3, 2, 1, 0].forEach(function (k) { ctx.fillStyle = CLASS_COLORS[data.classes[k]]; ctx.globalAlpha = k === 0 ? 1 : 0.45;
+      data.rules.forEach(function (r) { if (r[1] === k) ctx.fillRect(X(r[3] / 10) - (k ? 1.5 : 2.5), Y(r[2] / 10) - (k ? 1.5 : 2.5), k ? 3 : 5, k ? 3 : 5); }); });
+    ctx.globalAlpha = 1;
+    var conway = data.index['B3/S23'];
+    if (conway != null) { var cr = data.rules[conway]; ctx.strokeStyle = '#f0eee6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(cr[3] / 10), Y(cr[2] / 10), 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#f0eee6'; ctx.textAlign = 'left'; ctx.fillText('Conway’s numbers', X(cr[3] / 10) + 11, Y(cr[2] / 10) - 6); }
+    var p = data.rules[hover];
+    if (p) { ctx.strokeStyle = '#f0eee6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X(p[3] / 10), Y(p[2] / 10), 6, 0, Math.PI * 2); ctx.stroke(); }
+    read.innerHTML = p ? '<strong>' + esc(p[0]) + '</strong>: ' + (p[2] / 10).toFixed(1) + '% alive, ' + (p[3] / 10).toFixed(1) + '% changing each generation. It ' + CLASS_WORDS[data.classes[p[1]]] + '. Click to run it in the simulator above.'
+      : '<span class="chart-legend">' + data.classes.map(function (k) { return '<span><i style="background:' + CLASS_COLORS[k] + '"></i>' + CLASS_LABELS[k] + ' (' + data.count[k].toLocaleString() + ')</span>'; }).join('') + '</span>' +
+        ' All ' + data.rules.length.toLocaleString() + ' hex rules without B0. Hover or tap a dot for its rule; click one to run it above.';
+  }
+  function nearest(ev) { var r = cv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top, best = -1, bd = 12 * 12;
+    data.rules.forEach(function (p, i) { var dx = geom.X(p[3] / 10) - mx, dy = geom.Y(p[2] / 10) - my, d = dx * dx + dy * dy; if (d < bd || (d === bd && p[1] === 0)) { bd = d; best = i; } }); return best; }
+  cv.addEventListener('pointermove', function (ev) { if (!data) return; var h2 = nearest(ev); if (h2 !== hover) { hover = h2; draw(); } });
+  cv.addEventListener('pointerleave', function () { hover = -1; draw(); });
+  cv.addEventListener('click', function (ev) { if (!data) return; var i = nearest(ev); if (i >= 0) document.dispatchEvent(new CustomEvent('nb-hex-rule', { detail: data.rules[i][0] })); });
+  cv.setAttribute('role', 'img');
+  fetch('data/rules-hex.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
+    if (cancelled) return;
+    d.index = {}; d.count = {}; d.classes.forEach(function (k) { d.count[k] = 0; });
+    d.rules.forEach(function (r, i) { d.index[r[0]] = i; d.count[d.classes[r[1]]]++; });
+    data = d;
+    cv.setAttribute('aria-label', 'Scatter of all ' + d.rules.length + ' hexagonal Life-like rules without B0, by cells changing per generation and cells alive. ' + d.classes.map(function (k) { return d.count[k] + ' ' + k; }).join(', ') + '.');
+    draw();
+  }).catch(function () { read.textContent = 'Couldn’t load the survey data (data/rules-hex.json). It needs the page to be served over the web, not opened as a file.'; });
+  var ro = new ResizeObserver(draw); ro.observe(holder);
   return function () { cancelled = true; ro.disconnect(); };
 } };
 
